@@ -293,7 +293,6 @@ export default function App(){
       const key=detectKey(buffer)
       setDetectedKey(key)
       setStatus('Live — player tab audio connected')
-      void analyseCapturedTrack()
     }catch(error){
       console.error('Key analysis failed',error)
       setStatus('Live — player tab audio connected')
@@ -316,6 +315,7 @@ export default function App(){
       setLiveCapture(true)
       setTrackName(youtubeVideoId?(trackName||'YouTube video'):'YouTube tab audio')
       setStatus('Live — player tab audio connected')
+      void analyseCapturedTrack()
     }catch(error){
       console.error(error)
       setStatus(error instanceof Error?error.message:'Could not capture browser audio')
