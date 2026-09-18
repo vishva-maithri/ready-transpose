@@ -1,8 +1,9 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
-import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper, Pause, Play, Radio, RotateCcw, Search, Square, Upload, Youtube } from 'lucide-react'
+import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper, Pause, Play, Radio, RotateCcw, Square, Upload, Youtube } from 'lucide-react'
 import { PitchEngine } from './audio/PitchEngine'
 import { detectKey, KeyName } from './audio/KeyDetector'
 import { estimateBpm } from './audio/BpmDetector'
+import { searchYoutube, YoutubeSuggestion } from './youtubeSearch'
 
 const SEMITONES=Array.from({length:13},(_,i)=>i-6)
 const PITCH_CLASSES=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B']
@@ -13,6 +14,8 @@ const getTransposedKey=(key:KeyName,semitones:number)=>{
   const nextTonic=PITCH_CLASSES[(tonicIndex+semitones+12)%12]
   return `${nextTonic} ${key.mode==='major'?'Major':'Minor'}`
 }
+
+const isYoutubeUrl=(value:string)=>/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)(\/|$)/i.test(value)
 
 const formatTime=(seconds:number)=>{
   if(!Number.isFinite(seconds)||seconds<0) return '0:00'
@@ -37,13 +40,61 @@ export default function App(){
   const [liveCapture,setLiveCapture]=useState(false)
   const [youtubeVideoId,setYoutubeVideoId]=useState<string|null>(null)
   const [youtubeReady,setYoutubeReady]=useState(false)
+  const [youtubeSuggestions,setYoutubeSuggestions]=useState<YoutubeSuggestion[]>([])
+  const [youtubeSearchLoading,setYoutubeSearchLoading]=useState(false)
+  const [youtubeSearchError,setYoutubeSearchError]=useState('')
+  const [youtubeActiveSuggestion,setYoutubeActiveSuggestion]=useState(-1)
   const [pitchPulse,setPitchPulse]=useState(false)
   const pitchPulseTimer=useRef<number|undefined>(undefined)
   const seeking=useRef(false)
   const pendingSeek=useRef<number|null>(null)
   const engine=useRef(new PitchEngine())
   const youtubeWindow=useRef<Window|null>(null)
+  const youtubeApiKey=import.meta.env.VITE_YOUTUBE_API_KEY??''
 
+  useEffect(()=>{
+    const query=url.trim()
+
+    setYoutubeActiveSuggestion(-1)
+    setYoutubeSearchError('')
+
+    if(!query||query.length<2||isYoutubeUrl(query)){
+      setYoutubeSuggestions([])
+      setYoutubeSearchLoading(false)
+      return
+    }
+
+    if(!youtubeApiKey){
+      setYoutubeSuggestions([])
+      setYoutubeSearchError('YouTube search needs a YouTube API key')
+      return
+    }
+
+    const controller=new AbortController()
+    const timer=window.setTimeout(async()=>{
+      setYoutubeSearchLoading(true)
+      try{
+        const results=await searchYoutube(query,youtubeApiKey)
+        if(!controller.signal.aborted){
+          setYoutubeSuggestions(results)
+          setYoutubeSearchError(results.length?'':'No YouTube videos found')
+        }
+      }catch(error){
+        if(!controller.signal.aborted){
+          console.error(error)
+          setYoutubeSuggestions([])
+          setYoutubeSearchError('Could not search YouTube right now')
+        }
+      }finally{
+        if(!controller.signal.aborted)setYoutubeSearchLoading(false)
+      }
+    },450)
+
+    return ()=>{
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  },[url,youtubeApiKey])
 
   useEffect(()=>{
     const handleFullscreenChange=()=>setPartyMode(document.fullscreenElement!==null)
@@ -217,26 +268,12 @@ export default function App(){
     return ()=>window.clearInterval(timer)
   },[liveCapture,youtubeVideoId])
 
-  const browseYoutube=()=>{
-    const query=url.trim()
-    if(!query){
-      setStatus('Type a song, artist, or karaoke track to search YouTube')
-      return
-    }
-
-    const isUrl=/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)(\/|$)/i.test(query)
-    if(isUrl){
-      loadYoutube()
-      return
-    }
-
-    const searchUrl='https://www.youtube.com/results?search_query='+encodeURIComponent(query)
-    const browseWindow=window.open(searchUrl,'ready-transpose-youtube-browse')
-    if(!browseWindow){
-      setStatus('Chrome blocked the YouTube search tab — allow pop-ups for Ready Transpose and try again.')
-      return
-    }
-    setStatus('YouTube search opened — choose a track and paste its link here.')
+  const selectYoutubeSuggestion=(suggestion:YoutubeSuggestion)=>{
+    setUrl('https://www.youtube.com/watch?v='+suggestion.videoId)
+    setYoutubeSuggestions([])
+    setYoutubeSearchError('')
+    setYoutubeActiveSuggestion(-1)
+    window.setTimeout(()=>loadYoutube(),0)
   }
 
   const loadYoutube=()=>{
@@ -503,9 +540,27 @@ export default function App(){
     <section className="hero"><p className="eyebrow">KARAOKE • REAL-TIME PITCH SHIFTING</p><h1>Make any song<br/><span>singable.</span></h1><p className="hero-copy">Load a song, change the pitch, and sing along without changing the tempo.</p></section>
     <section className="input-card">
       <div className="input-heading"><div><p className="label">YOUTUBE TRACK</p><h2>Bring your song</h2></div><Youtube size={28}/></div>
-      <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')browseYoutube()}} placeholder="Paste a link or search for a song…" aria-label="YouTube URL or search" disabled={loading}/><button className="browse-button" disabled={loading} onClick={browseYoutube}><Search size={16}/>Browse YouTube</button><button className="primary-button" disabled={loading} onClick={loadYoutube}><Youtube size={16}/>Load</button></div>
+      <div className="youtube-search-wrap">
+        <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} onKeyDown={e=>{
+          if(e.key==='ArrowDown'&&youtubeSuggestions.length){e.preventDefault();setYoutubeActiveSuggestion(index=>Math.min(index+1,youtubeSuggestions.length-1))}
+          if(e.key==='ArrowUp'&&youtubeSuggestions.length){e.preventDefault();setYoutubeActiveSuggestion(index=>Math.max(index-1,-1))}
+          if(e.key==='Enter'){
+            if(youtubeActiveSuggestion>=0&&youtubeSuggestions[youtubeActiveSuggestion]){e.preventDefault();selectYoutubeSuggestion(youtubeSuggestions[youtubeActiveSuggestion])}
+            else if(isYoutubeUrl(url.trim()))loadYoutube()
+          }
+          if(e.key==='Escape'){setYoutubeSuggestions([]);setYoutubeActiveSuggestion(-1)}
+        }} onFocus={()=>{if(url.trim().length>=2&&!isYoutubeUrl(url.trim())&&!youtubeSearchError)setYoutubeSearchError('')}} placeholder="Search YouTube or paste a link…" aria-label="YouTube search or URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={loadYoutube}><Youtube size={16}/>Load</button></div>
+        {(youtubeSearchLoading||youtubeSuggestions.length>0||youtubeSearchError)&&<div className="youtube-suggestions" role="listbox" aria-label="YouTube search results">
+          {youtubeSearchLoading&&<div className="youtube-suggestion-message">Searching YouTube…</div>}
+          {!youtubeSearchLoading&&youtubeSuggestions.map((suggestion,index)=><button key={suggestion.videoId} className={`youtube-suggestion${index===youtubeActiveSuggestion?' is-active':''}`} onMouseDown={e=>e.preventDefault()} onClick={()=>selectYoutubeSuggestion(suggestion)} role="option" aria-selected={index===youtubeActiveSuggestion}>
+            <img src={suggestion.thumbnail} alt="" />
+            <span><strong dangerouslySetInnerHTML={{__html:suggestion.title}}/><small>{suggestion.channelTitle}</small></span>
+          </button>)}
+          {!youtubeSearchLoading&&youtubeSuggestions.length===0&&youtubeSearchError&&<div className="youtube-suggestion-message">{youtubeSearchError}</div>}
+        </div>}
+      </div>
       {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player tab is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate tab so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
-      <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'Click Capture, then select the separate “Ready Transpose — YouTube Player” tab and enable Share audio.':'Paste a YouTube link, or search/browse YouTube to find one.'}</span></div>
+      <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'Click Capture, then select the separate “Ready Transpose — YouTube Player” tab and enable Share audio.':'Search for a song above and choose a YouTube result, or paste a YouTube link directly.'}</span></div>
       <button className={`capture-button${liveCapture?" is-live":""}`} disabled={loading&&!liveCapture||!youtubeVideoId||!youtubeReady} onClick={liveCapture?stopCapture:startCapture}>{liveCapture?<><Square size={15} fill="currentColor"/>Stop capture</>:<><Radio size={16}/>Capture player tab audio</>}</button>
       <div className="divider"><span>OR</span></div>
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
