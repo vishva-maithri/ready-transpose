@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
-import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper, Pause, Play, Radio, RotateCcw, Square, Upload, Youtube } from 'lucide-react'
+import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper, Pause, Play, Radio, RotateCcw, Search, Square, Upload, Youtube } from 'lucide-react'
 import { PitchEngine } from './audio/PitchEngine'
 import { detectKey, KeyName } from './audio/KeyDetector'
 import { estimateBpm } from './audio/BpmDetector'
@@ -216,6 +216,28 @@ export default function App(){
     },250)
     return ()=>window.clearInterval(timer)
   },[liveCapture,youtubeVideoId])
+
+  const browseYoutube=()=>{
+    const query=url.trim()
+    if(!query){
+      setStatus('Type a song, artist, or karaoke track to search YouTube')
+      return
+    }
+
+    const isUrl=/^(https?:\\/\\/)?(www\\.)?(youtube\\.com|youtu\\.be)(\\/|$)/i.test(query)
+    if(isUrl){
+      loadYoutube()
+      return
+    }
+
+    const searchUrl='https://www.youtube.com/results?search_query='+encodeURIComponent(query)
+    const browseWindow=window.open(searchUrl,'ready-transpose-youtube-browse')
+    if(!browseWindow){
+      setStatus('Chrome blocked the YouTube search tab — allow pop-ups for Ready Transpose and try again.')
+      return
+    }
+    setStatus('YouTube search opened — choose a track and paste its link here.')
+  }
 
   const loadYoutube=()=>{
     const value=url.trim()
@@ -481,9 +503,9 @@ export default function App(){
     <section className="hero"><p className="eyebrow">KARAOKE • REAL-TIME PITCH SHIFTING</p><h1>Make any song<br/><span>singable.</span></h1><p className="hero-copy">Load a song, change the pitch, and sing along without changing the tempo.</p></section>
     <section className="input-card">
       <div className="input-heading"><div><p className="label">YOUTUBE TRACK</p><h2>Bring your song</h2></div><Youtube size={28}/></div>
-      <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://youtube.com/watch?v=…" aria-label="YouTube URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={loadYoutube}><Youtube size={16}/>Load in Ready Transpose</button></div>
+      <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')browseYoutube()}} placeholder="Paste a link or search for a song…" aria-label="YouTube URL or search" disabled={loading}/><button className="browse-button" disabled={loading} onClick={browseYoutube}><Search size={16}/>Browse YouTube</button><button className="primary-button" disabled={loading} onClick={loadYoutube}><Youtube size={16}/>Load</button></div>
       {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player tab is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate tab so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
-      <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'Click Capture, then select the separate “Ready Transpose — YouTube Player” tab and enable Share audio.':'Load a YouTube video to open the separate player window.'}</span></div>
+      <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'Click Capture, then select the separate “Ready Transpose — YouTube Player” tab and enable Share audio.':'Paste a YouTube link, or search/browse YouTube to find one.'}</span></div>
       <button className={`capture-button${liveCapture?" is-live":""}`} disabled={loading&&!liveCapture||!youtubeVideoId||!youtubeReady} onClick={liveCapture?stopCapture:startCapture}>{liveCapture?<><Square size={15} fill="currentColor"/>Stop capture</>:<><Radio size={16}/>Capture player tab audio</>}</button>
       <div className="divider"><span>OR</span></div>
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
