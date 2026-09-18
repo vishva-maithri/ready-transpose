@@ -554,7 +554,7 @@ export default function App(){
             else if(isYoutubeUrl(url.trim()))loadYoutube(url)
           }
           if(e.key==='Escape'){setYoutubeSuggestions([]);setYoutubeActiveSuggestion(-1)}
-        }} onFocus={()=>{if(url.trim().length>=2&&!isYoutubeUrl(url.trim())&&!youtubeSearchError)setYoutubeSearchError('')}} placeholder="Search YouTube or paste a link…" aria-label="YouTube search or URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={()=>loadYoutube(url)}><Youtube size={16}/>Start</button></div>
+        }} onFocus={()=>{if(url.trim().length>=2&&!isYoutubeUrl(url.trim())&&!youtubeSearchError)setYoutubeSearchError('')}} placeholder="Search YouTube or paste a link…" aria-label="YouTube search or URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={()=>loadYoutube(url)}><Youtube size={16}/>Play</button></div>
         {(youtubeSearchLoading||youtubeSuggestions.length>0||youtubeSearchError)&&<div className="youtube-suggestions" role="listbox" aria-label="YouTube search results">
           {youtubeSearchLoading&&<div className="youtube-suggestion-message">Searching YouTube…</div>}
           {!youtubeSearchLoading&&youtubeSuggestions.map((suggestion,index)=><button key={suggestion.videoId} className={`youtube-suggestion${index===youtubeActiveSuggestion?' is-active':''}`} onMouseDown={e=>e.preventDefault()} onClick={()=>selectYoutubeSuggestion(suggestion)} role="option" aria-selected={index===youtubeActiveSuggestion}>
