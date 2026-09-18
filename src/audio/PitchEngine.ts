@@ -53,12 +53,27 @@ export class PitchEngine {
   pause() {
     if (!this.context||!this.source||!this.playing) return
 
-    this.pausedAt=Math.min(
-      Math.max(this.context.currentTime-this.startedAt,0),
-      this.buffer?.duration??0
-    )
+    this.pausedAt=this.getCurrentTime()
     this.playing=false
     this.cleanupSource()
+  }
+
+  seek(position:number, semitones:number) {
+    if (!this.context||!this.buffer) return
+
+    const target=Math.min(Math.max(position,0),this.buffer.duration)
+    const wasPlaying=this.playing
+
+    if (wasPlaying) {
+      this.playing=false
+      this.cleanupSource()
+    }
+
+    this.pausedAt=target
+
+    if (wasPlaying) {
+      this.play(semitones)
+    }
   }
 
   setPitch(semitones:number) {
