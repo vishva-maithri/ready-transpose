@@ -311,6 +311,10 @@ export default function App(){
         return
       }
       youtubeWindow.current=popup
+      // Keep the main Ready Transpose tab focused after opening the player window.
+      // The player still stays open in its own tab/window for audio capture.
+      popup.blur()
+      window.focus()
       setYoutubeVideoId(videoId)
       setYoutubeReady(false)
       setLiveCapture(false)
