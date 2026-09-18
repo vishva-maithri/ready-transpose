@@ -30,3 +30,12 @@
 @media(max-width:600px){.party-topbar{padding:18px 20px}.party-content{width:min(100% - 28px,900px)}.party-art{width:82px;height:82px;margin-top:22px}.party-content h1{font-size:28px}.party-pitch strong{font-size:40px}.party-analysis{grid-template-columns:1fr}.party-hint{line-height:1.8}.party-exit span{display:none}}
 .party-mode-button{display:grid;place-items:center;width:36px;height:36px;border:1px solid #303542;border-radius:50%;color:#a1a6b2;background:#141720}
 .party-mode-button:disabled{opacity:.35;cursor:not-allowed}
+
+.pitch-actions{display:flex;align-items:center;gap:7px}
+.pitch-nudge{display:grid;place-items:center;width:34px;height:34px;border:1px solid #303542;border-radius:9px;color:#d9dbe2;background:#141720;font-size:20px;line-height:1}
+.pitch-nudge:disabled{opacity:.3;cursor:not-allowed}
+.pitch-quick-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}
+.pitch-quick-grid button{min-height:48px;border:1px solid #303542;border-radius:10px;color:#aeb3bf;background:#151821;font-size:14px;font-weight:750;transition:transform .12s ease,background .12s ease,border-color .12s ease}
+.pitch-quick-grid button:hover:not(:disabled){transform:translateY(-1px);border-color:#4b5060}
+.pitch-quick-grid button.active{color:white;background:#7c5cff;border-color:#7c5cff;box-shadow:0 8px 24px rgba(124,92,255,.18)}
+.pitch-more-label{margin-top:12px;color:#5f6470;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
