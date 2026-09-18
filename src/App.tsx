@@ -247,7 +247,7 @@ export default function App(){
       const popupUrl=window.location.origin+'/youtube-player?videoId='+encodeURIComponent(videoId)
       const popup=window.open(popupUrl,'ready-transpose-youtube-player')
       if(!popup){
-        setStatus('Chrome blocked the player window — allow pop-ups for Ready Transpose and try again.')
+        setStatus('Chrome blocked the player tab — allow pop-ups for Ready Transpose and try again.')
         return
       }
       youtubeWindow.current=popup
@@ -482,7 +482,7 @@ export default function App(){
     <section className="input-card">
       <div className="input-heading"><div><p className="label">YOUTUBE TRACK</p><h2>Bring your song</h2></div><Youtube size={28}/></div>
       <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://youtube.com/watch?v=…" aria-label="YouTube URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={loadYoutube}><Youtube size={16}/>Load in Ready Transpose</button></div>
-      {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player window is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate tab so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
+      {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player tab is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate tab so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
       <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'Click Capture, then select the separate “Ready Transpose — YouTube Player” tab and enable Share audio.':'Load a YouTube video to open the separate player window.'}</span></div>
       <button className={`capture-button${liveCapture?" is-live":""}`} disabled={loading&&!liveCapture||!youtubeVideoId||!youtubeReady} onClick={liveCapture?stopCapture:startCapture}>{liveCapture?<><Square size={15} fill="currentColor"/>Stop capture</>:<><Radio size={16}/>Capture player tab audio</>}</button>
       <div className="divider"><span>OR</span></div>
