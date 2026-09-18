@@ -56,7 +56,8 @@ export class PitchEngine {
     const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
       video:true,
       audio:audioConstraints,
-      selfBrowserSurface:'exclude',
+      preferCurrentTab:true,
+      selfBrowserSurface:'include',
       systemAudio:'exclude',
       surfaceSwitching:'include',
       monitorTypeSurfaces:'exclude'
@@ -76,7 +77,7 @@ export class PitchEngine {
 
     if(audioTracks.length===0){
       stream.getTracks().forEach(track=>track.stop())
-      throw new Error('No audio track was shared. Select a YouTube browser tab and enable Share audio.')
+      throw new Error('No audio track was shared. Select “This Tab” and enable Share audio.')
     }
 
     const source=this.context!.createMediaStreamSource(stream)
