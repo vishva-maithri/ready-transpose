@@ -44,6 +44,13 @@ export class PitchEngine {
     // These are preferences; the actual values are logged below via getSettings().
     if(supported.sampleRate) audioConstraints.sampleRate=48000
     if(supported.channelCount) audioConstraints.channelCount=2
+
+    // This is music, not microphone speech. Disable voice-processing DSP
+    // when the browser exposes these capture constraints.
+    if(supported.autoGainControl) audioConstraints.autoGainControl=false
+    if(supported.echoCancellation) audioConstraints.echoCancellation=false
+    if(supported.noiseSuppression) audioConstraints.noiseSuppression=false
+
     if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=true
 
     const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
