@@ -38,6 +38,39 @@ export default function App(){
   const engine=useRef(new PitchEngine())
 
   useEffect(()=>{
+    const handleKeyDown=(event:KeyboardEvent)=>{
+      const target=event.target as HTMLElement
+      if(target.tagName==='INPUT'||target.tagName==='TEXTAREA'||target.isContentEditable)return
+
+      if(event.code==='Space'){
+        event.preventDefault()
+        togglePlayback()
+        return
+      }
+
+      if(event.key==='ArrowLeft'){
+        event.preventDefault()
+        changePitch(Math.max(-6,pitch-1))
+        return
+      }
+
+      if(event.key==='ArrowRight'){
+        event.preventDefault()
+        changePitch(Math.min(6,pitch+1))
+        return
+      }
+
+      if(event.key==='0'){
+        event.preventDefault()
+        changePitch(0)
+      }
+    }
+
+    window.addEventListener('keydown',handleKeyDown)
+    return ()=>window.removeEventListener('keydown',handleKeyDown)
+  },[pitch,playing,loading,trackName])
+
+  useEffect(()=>{
     if(!playing) return
     const timer=window.setInterval(()=>{
       if(seeking.current) return
@@ -155,7 +188,7 @@ export default function App(){
 
   return <main className="app-shell">
     <header className="topbar"><div className="brand"><div className="brand-mark"><Music2 size={19}/></div><span>Ready<span className="accent">Transpose</span></span></div><span className="prototype">PROTOTYPE</span></header>
-    <section className="hero"><p className="eyebrow">KARAOKE • REAL-TIME PITCH SHIFTING</p><h1>Make any song<br/><span>singable.</span></h1><p className="hero-copy">Paste a karaoke track, find the right key, and transpose it up or down without changing the tempo.</p></section>
+    <section className="hero"><p className="eyebrow">KARAOKE • REAL-TIME PITCH SHIFTING</p><h1>Make any song<br/><span>singable.</span></h1><p className="hero-copy">Load a song, change the pitch, and sing along without changing the tempo.</p></section>
     <section className="input-card">
       <div className="input-heading"><div><p className="label">YOUTUBE TRACK</p><h2>Bring your song</h2></div><Youtube size={28}/></div>
       <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://youtube.com/watch?v=…" aria-label="YouTube URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={()=>setStatus('YouTube ingestion is the next integration step')}>Load track</button></div>
