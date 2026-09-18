@@ -286,14 +286,16 @@ export default function App(){
       })
 
       recorder.start()
-      await new Promise(resolve=>window.setTimeout(resolve,8000))
+      await new Promise(resolve=>window.setTimeout(resolve,15000))
       if(recorder.state!=='inactive')recorder.stop()
       const blob=await recording
-      const buffer=await new AudioContext().decodeAudioData(await blob.arrayBuffer())
+      const analysisContext=new AudioContext()
+      const buffer=await analysisContext.decodeAudioData(await blob.arrayBuffer())
       const key=detectKey(buffer)
       const detectedBpm=estimateBpm(buffer)
       setDetectedKey(key)
       setBpm(detectedBpm)
+      await analysisContext.close()
       setStatus('Live — player tab audio connected')
     }catch(error){
       console.error('Key analysis failed',error)
