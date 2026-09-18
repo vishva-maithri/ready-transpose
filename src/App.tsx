@@ -564,10 +564,13 @@ export default function App(){
           {!youtubeSearchLoading&&youtubeSuggestions.length===0&&youtubeSearchError&&<div className="youtube-suggestion-message">{youtubeSearchError}</div>}
         </div>}
       </div>
-      {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player tab is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate tab so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
-      {youtubeVideoId&&<div className={`capture-hint${liveCapture?' is-live':''}`}><Radio size={15}/><span>{liveCapture?'Live capture connected — play the song and transpose it in real time.':'The player runs in a separate tab. When it is ready, connect its audio below.'}</span></div>}
+      {youtubeVideoId&&<div className={`youtube-connection-card${liveCapture?' is-live':''}`}>
+        <div className="youtube-connection-step"><span className="youtube-step-number">1</span><div><strong>{youtubeReady?'Player ready':'Opening player…'}</strong><span>{youtubeReady?'The YouTube player is open in another tab. Switch back here to continue.':'The YouTube player is opening in a separate tab.'}</span></div></div>
+        <div className="youtube-connection-divider"><span></span><span></span></div>
+        <div className={`youtube-connection-step${youtubeReady?' is-ready':''}"><span className="youtube-step-number">2</span><div><strong>{liveCapture?'Audio connected':'Connect audio'}</strong><span>{liveCapture?'Ready Transpose is receiving the player audio. You can now play and transpose.':'Click Connect Audio, then choose the Ready Transpose YouTube Player tab and enable Share audio.'}</span></div></div>
+      </div>}
       {youtubeVideoId&&youtubeReady&&!liveCapture&&<button className="capture-button" disabled={loading} onClick={startCapture}><Radio size={17}/>Connect Audio</button>}
-      {youtubeVideoId&&liveCapture&&<button className="capture-button is-live" disabled={loading} onClick={stopCapture}><Radio size={17}/>Audio Connected — Disconnect</button>}
+      {youtubeVideoId&&liveCapture&&<button className="capture-button is-live" disabled={loading} onClick={stopCapture}><Radio size={17}/>Audio Connected — Disconnect</button>
       <div className="divider"><span>OR</span></div>
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
     </section>
