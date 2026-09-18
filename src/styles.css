@@ -297,3 +297,5 @@
 @media(max-width:600px){
   .party-youtube-player{margin-top:18px;border-radius:14px}
 }
+
+.youtube-popup{min-height:100vh;padding:18px;background:#090b10;color:#f4f5f7}.youtube-popup-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;color:#686e7b;font-size:9px;font-weight:800;letter-spacing:.16em}.youtube-popup-video{overflow:hidden;border:1px solid #292d38;border-radius:14px;background:#000;box-shadow:0 18px 55px rgba(0,0,0,.35)}.youtube-popup-video .youtube-player-wrap{min-height:0}.youtube-popup-hint{margin:10px 2px 0;color:#666c7a;font-size:10px}.youtube-popup-message{display:grid;place-items:center;min-height:90vh;color:#9da2af}.youtube-popup-card{display:flex;align-items:flex-start;gap:10px;margin-top:16px;padding:13px 15px;border:1px solid rgba(124,92,255,.2);border-radius:14px;background:rgba(124,92,255,.07);color:#8e94a2}.youtube-popup-card svg{flex:0 0 auto;color:#9d86ff;margin-top:1px}.youtube-popup-card div{display:flex;flex-direction:column;gap:4px}.youtube-popup-card strong{color:#e8e5f5;font-size:12px}.youtube-popup-card span{font-size:10px;line-height:1.5}
