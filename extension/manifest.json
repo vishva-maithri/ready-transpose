@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "Ready Transpose Audio Bridge",
+  "version": "0.1.0",
+  "description": "Captures the active tab audio for Ready Transpose.",
+  "permissions": ["tabCapture", "offscreen"],
+  "background": {"service_worker": "service-worker.js"},
+  "action": {"default_title": "Capture tab audio for Ready Transpose"}
+}
