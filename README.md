@@ -157,3 +157,21 @@ npm run build
 ## Product principle
 
 **Don't build the whole product until the core audio experience feels right.**
+
+
+## Step 6 — Embedded YouTube player
+
+The YouTube proof of concept now keeps the video inside Ready Transpose using the official YouTube IFrame Player API.
+
+Flow:
+1. Paste a YouTube URL.
+2. Click **Load in Ready Transpose**.
+3. Play/pause/seek from either the embedded YouTube player or Ready Transpose controls.
+4. Click **Capture this tab audio**.
+5. In Chrome's sharing dialog, select **This Tab** and enable **Share audio**.
+6. Ready Transpose keeps the capture pipeline connected while the YouTube player is paused, played, or seeked.
+7. Change pitch in real time without changing tempo.
+
+The IFrame Player API provides JavaScript controls for play, pause, seek, player state, duration, and video metadata. The embedded player keeps YouTube's standard controls visible. See the official YouTube IFrame Player API and player parameters documentation.
+
+The browser capture still requires an explicit user selection and permission. getDisplayMedia() requires a user gesture and can return audio for a selected browser tab when supported. Ready Transpose requests the current tab as the preferred capture surface and requests music-friendly capture settings.
