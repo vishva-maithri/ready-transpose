@@ -567,7 +567,7 @@ export default function App(){
       {youtubeVideoId&&<div className={`youtube-connection-card${liveCapture?' is-live':''}`}>
         <div className="youtube-connection-step"><span className="youtube-step-number">1</span><div><strong>{youtubeReady?'Player ready':'Opening player…'}</strong><span>{youtubeReady?'The YouTube player is open in another tab. Switch back here to continue.':'The YouTube player is opening in a separate tab.'}</span></div></div>
         <div className="youtube-connection-divider"><span></span><span></span></div>
-        <div className={`youtube-connection-step${youtubeReady?' is-ready':''}"><span className="youtube-step-number">2</span><div><strong>{liveCapture?'Audio connected':'Connect audio'}</strong><span>{liveCapture?'Ready Transpose is receiving the player audio. You can now play and transpose.':'Click Connect Audio, then choose the Ready Transpose YouTube Player tab and enable Share audio.'}</span></div></div>
+        <div className={`youtube-connection-step${youtubeReady?' is-ready':''}`}><span className="youtube-step-number">2</span><div><strong>{liveCapture?'Audio connected':'Connect audio'}</strong><span>{liveCapture?'Ready Transpose is receiving the player audio. You can now play and transpose.':'Click Connect Audio, then choose the Ready Transpose YouTube Player tab and enable Share audio.'}</span></div></div>
       </div>}
       {youtubeVideoId&&youtubeReady&&!liveCapture&&<button className="capture-button" disabled={loading} onClick={startCapture}><Radio size={17}/>Connect Audio</button>}
       {youtubeVideoId&&liveCapture&&<button className="capture-button is-live" disabled={loading} onClick={stopCapture}><Radio size={17}/>Audio Connected — Disconnect</button>
