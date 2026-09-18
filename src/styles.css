@@ -71,3 +71,28 @@
   .semitone-grid{gap:4px}
   .semitone-grid button{min-height:42px;padding:6px 0}
 }
+
+@media(min-width:1100px){
+  .party-topbar{padding:30px 46px}
+  .party-content{width:min(1000px,calc(100% - 80px));padding-bottom:70px}
+  .party-eyebrow{font-size:12px}
+  .party-art{width:118px;height:118px;margin-top:34px}
+  .party-content h1{font-size:clamp(42px,4.5vw,64px)}
+  .party-status{font-size:13px}
+  .party-progress{margin-top:44px;max-width:900px}
+  .party-controls{margin:26px 0 42px}
+  .party-play{width:92px;height:92px}
+  .party-restart{width:58px;height:58px}
+  .party-pitch{gap:34px}
+  .party-pitch button{width:62px;height:62px;font-size:30px}
+  .party-pitch strong{font-size:56px}
+  .party-analysis{max-width:720px;margin-top:42px}
+  .party-analysis div{padding:20px}
+  .party-analysis strong{font-size:20px}
+  .party-hint{font-size:12px}
+}
+@media(min-width:1600px){
+  .party-content{max-width:1100px}
+  .party-content h1{font-size:68px}
+  .party-art{width:130px;height:130px}
+}
