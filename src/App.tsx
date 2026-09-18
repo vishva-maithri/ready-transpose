@@ -541,7 +541,7 @@ export default function App(){
   </main>
 
   return <main className="app-shell">
-    <header className="topbar"><div className="brand"><div className="brand-mark"><Music2 size={19}/></div><span>Ready<span className="accent">Transpose</span></span></div><span className="prototype">PROTOTYPE</span></header>
+    <header className="topbar"><div className="brand"><div className="brand-mark"><Music2 size={19}/></div><span>Ready<span className="accent">Transpose</span></span></div></header>
     <section className="hero"><p className="eyebrow">KARAOKE • REAL-TIME PITCH SHIFTING</p><h1>Make any song<br/><span>singable.</span></h1><p className="hero-copy">Load a song, change the pitch, and sing along without changing the tempo.</p></section>
     <section className="input-card">
       <div className="input-heading"><div><p className="label">YOUTUBE TRACK</p><h2>Bring your song</h2></div><Youtube size={28}/></div>
@@ -572,7 +572,7 @@ export default function App(){
       {youtubeVideoId&&youtubeReady&&!liveCapture&&<button className="capture-button" disabled={loading} onClick={startCapture}><Radio size={17}/>Connect Audio</button>}
       {youtubeVideoId&&liveCapture&&<button className="capture-button is-live" disabled={loading} onClick={stopCapture}><Radio size={17}/>Audio Connected — Disconnect</button>}
       <div className="divider"><span>OR</span></div>
-      <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
+      <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — ready to transpose"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
     </section>
     <section className="player-card">
       <div className="track-row"><div className="track-art"><Music2/></div><div className="track-info"><span className={`status status-${loading?"loading":playing?"playing":status==="Finished"?"finished":status==="Paused"?"paused":"ready"}`}><span className="status-dot"/>{status}</span><strong>{trackName||'No track loaded'}</strong></div><div className="player-actions"><button className="party-mode-button" onClick={togglePartyMode} disabled={loading||!trackName} aria-label="Enter Party Mode">
@@ -590,6 +590,6 @@ export default function App(){
       <div className="semitone-grid">{SEMITONES.map(step=><button key={step} className={step===pitch?'active':''} onClick={()=>changePitch(step)} disabled={loading}>{step>0?'+':''}{step}</button>)}</div></div>
       <div className={`key-analysis${analysing?" is-analysing":""}`}>{youtubeVideoId ? <div className="key-analysis-live"><span className="key-icon"><Radio size={24}/></span><div><span className="label">LIVE AUDIO CAPTURE</span><strong>{liveCapture?"YouTube tab connected":"YouTube player ready"}</strong><p>Real-time pitch shifting is available for the YouTube player. Key and tempo analysis is not used for YouTube tracks.</p></div></div> : analysing ? <div className="key-analysis-loading"><span className="key-icon">🎼</span><div><span className="label">TRACK ANALYSIS</span><strong>Analysing key & tempo…</strong><p>Detecting the musical key and tempo from the uploaded audio.</p></div></div> : detectedKey ? <><div className="key-column"><span className="key-icon">🎼</span><div><span className="label">DETECTED KEY</span><strong className="key-name">{detectedKey.label}</strong><span className="key-confidence">{detectedKey.confidence}% confidence</span>{bpm>0&&<span className={`tempo-value${playing?" is-playing":""}`} style={{animationDuration:`${60/bpm}s`}}>♩ {bpm} BPM</span>}</div></div><div className="key-arrow"><ArrowRight size={24}/></div><div className="key-column current-key"><div><span className="label">WITH CURRENT TRANSPOSE</span><strong className="key-name">{getTransposedKey(detectedKey,pitch)}</strong><span className="key-subtitle">{pitch===0?"Same as the original key":`${pitch>0?"+":""}${pitch} semitones from original`}</span></div></div><div className="key-tip"><Lightbulb size={19}/><div><strong>A better starting point</strong><p>Use the detected key as your reference, then move a few semitones up or down until it feels comfortable.</p></div></div></> : <div className="key-analysis-empty"><span className="key-icon">🎼</span><div><strong>Automatic key analysis</strong><p>Upload a track and we’ll detect its musical key and tempo.</p></div></div>}</div>
     </section>
-    <footer><span>Ready Transpose</span><span>Built for singers</span></footer>
+    <footer><span>Ready Transpose</span><span>VishLabs</span></footer>
   </main>
 }
