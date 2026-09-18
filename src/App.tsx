@@ -20,6 +20,7 @@ export default function App(){
   const [currentTime,setCurrentTime]=useState(0)
   const [duration,setDuration]=useState(0)
   const seeking=useRef(false)
+  const pendingSeek=useRef<number|null>(null)
   const engine=useRef(new PitchEngine())
 
   useEffect(()=>{
@@ -68,9 +69,22 @@ export default function App(){
     }
   }
 
-  const seek=(value:number)=>{
+  const beginSeek=()=>{
+    seeking.current=true
+    pendingSeek.current=null
+  }
+
+  const previewSeek=(value:number)=>{
     setCurrentTime(value)
-    engine.current.seek(value,pitch)
+    pendingSeek.current=value
+  }
+
+  const finishSeek=(value:number)=>{
+    const target=pendingSeek.current ?? value
+    pendingSeek.current=null
+    seeking.current=false
+    engine.current.seek(target,pitch)
+    setCurrentTime(engine.current.getCurrentTime())
   }
 
   const changePitch=(value:number)=>{setPitch(value);if(playing)engine.current.setPitch(value)}
@@ -87,7 +101,7 @@ export default function App(){
     <section className="player-card">
       <div className="track-row"><div className="track-art"><Music2/></div><div className="track-info"><span className="status">{status}</span><strong>{trackName||'No track loaded'}</strong></div><button className="play-button" onClick={togglePlayback} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div>
       <div className="progress-panel">
-        <input className="progress-slider" type="range" min="0" max={duration||0} step="0.1" value={Math.min(currentTime,duration||0)} onPointerDown={()=>{seeking.current=true}} onPointerUp={e=>{seeking.current=false;seek(Number(e.currentTarget.value))}} onChange={e=>seek(Number(e.target.value))} disabled={!duration} aria-label="Playback position"/>
+        <input className="progress-slider" type="range" min="0" max={duration||0} step="0.1" value={Math.min(currentTime,duration||0)} onPointerDown={beginSeek} onChange={e=>previewSeek(Number(e.target.value))} onPointerUp={e=>finishSeek(Number(e.currentTarget.value))} onKeyDown={e=>{if(e.key==='Enter') finishSeek(Number(e.currentTarget.value))}} disabled={!duration} aria-label="Playback position"/>
         <div className="time-row"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
       </div>
       <div className="pitch-panel"><div className="pitch-heading"><div><span className="label">TRANSPOSE</span><div className="pitch-value">{pitch>0?'+':''}{pitch}<small> semitones</small></div></div><button className="reset" onClick={()=>changePitch(0)}>Reset</button></div>
