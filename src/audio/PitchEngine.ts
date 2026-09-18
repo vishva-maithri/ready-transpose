@@ -23,30 +23,36 @@ export class PitchEngine {
   play(semitones:number) {
     if (!this.context||!this.buffer||this.playing) return
 
-    this.source=this.context.createBufferSource()
-    this.source.buffer=this.buffer
-    this.node=new SoundTouchNode({context:this.context})
-    this.gain=this.context.createGain()
+    const source=this.context.createBufferSource()
+    source.buffer=this.buffer
+    const node=new SoundTouchNode({context:this.context})
+    const gain=this.context.createGain()
 
-    this.source.connect(this.node)
-    this.node.connect(this.gain)
-    this.gain.connect(this.context.destination)
+    source.connect(node)
+    node.connect(gain)
+    gain.connect(this.context.destination)
 
-    this.node.pitchSemitones.value=semitones
-    this.node.playbackRate.value=1
-    this.source.playbackRate.value=1
+    node.pitchSemitones.value=semitones
+    node.playbackRate.value=1
+    source.playbackRate.value=1
+
+    this.source=source
+    this.node=node
+    this.gain=gain
 
     const offset=Math.min(this.pausedAt,this.buffer.duration)
     this.startedAt=this.context.currentTime-offset
-    this.source.onended=()=>{
-      if (this.playing) {
-        this.playing=false
-        this.pausedAt=0
-        this.cleanupSource()
-      }
+
+    source.onended=()=>{
+      // Ignore an old source that was intentionally replaced, for example by seek.
+      if (this.source!==source) return
+
+      this.playing=false
+      this.pausedAt=0
+      this.cleanupSource()
     }
 
-    this.source.start(0,offset)
+    source.start(0,offset)
     this.playing=true
   }
 
@@ -58,14 +64,17 @@ export class PitchEngine {
     this.cleanupSource()
   }
 
-  seek(position:number, semitones:number) {
+  seek(position:number,semitones:number) {
     if (!this.context||!this.buffer) return
 
     const target=Math.min(Math.max(position,0),this.buffer.duration)
     const wasPlaying=this.playing
 
     if (wasPlaying) {
+      // Mark the current source as inactive before stopping it so its onended
+      // callback cannot affect the replacement source.
       this.playing=false
+      this.source=null
       this.cleanupSource()
     }
 
@@ -88,7 +97,6 @@ export class PitchEngine {
     this.playing=false
     this.pausedAt=0
     this.cleanupSource()
-    this.buffer=null
   }
 
   isPlaying() {
