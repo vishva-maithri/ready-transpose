@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
-import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, Pause, Play, RotateCcw, Upload, Youtube } from 'lucide-react'
+import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper, Pause, Play, RotateCcw, Sparkles, Upload, Youtube } from 'lucide-react'
 import { PitchEngine } from './audio/PitchEngine'
 import { detectKey, KeyName } from './audio/KeyDetector'
 import { estimateBpm } from './audio/BpmDetector'
@@ -279,7 +279,12 @@ export default function App(){
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
     </section>
     <section className="player-card">
-      <div className="track-row"><div className="track-art"><Music2/></div><div className="track-info"><span className={`status status-${loading?"loading":playing?"playing":status==="Finished"?"finished":status==="Paused"?"paused":"ready"}`}><span className="status-dot"/>{status}</span><strong>{trackName||'No track loaded'}</strong></div><div className="player-actions"><button className="party-mode-button" onClick={togglePartyMode} disabled={loading||!trackName} aria-label="Enter Party Mode"><Maximize2 size={17}/></button><button className="secondary-play-button" onClick={restart} disabled={loading||!trackName} aria-label="Restart">{<RotateCcw size={18}/>}</button><button className="play-button" onClick={togglePlayback} disabled={loading} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div></div>
+      <div className="track-row"><div className="track-art"><Music2/></div><div className="track-info"><span className={`status status-${loading?"loading":playing?"playing":status==="Finished"?"finished":status==="Paused"?"paused":"ready"}`}><span className="status-dot"/>{status}</span><strong>{trackName||'No track loaded'}</strong></div><div className="player-actions"><button className="party-mode-button" onClick={togglePartyMode} disabled={loading||!trackName} aria-label="Enter Party Mode">
+  <span className="party-sparkle party-sparkle-one">✦</span><span className="party-sparkle party-sparkle-two">✦</span>
+  <span className="party-icon"><PartyPopper size={18}/></span>
+  <span className="party-copy"><strong>Party Mode</strong><small>GO FULLSCREEN</small></span>
+  <Maximize2 size={17}/>
+</button><button className="secondary-play-button" onClick={restart} disabled={loading||!trackName} aria-label="Restart">{<RotateCcw size={18}/>}</button><button className="play-button" onClick={togglePlayback} disabled={loading} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div></div>
       <div className="progress-panel">
         <input className="progress-slider" type="range" min="0" max={duration||0} step="0.1" value={Math.min(currentTime,duration||0)} onPointerDown={beginSeek} onChange={e=>previewSeek(Number(e.target.value))} onPointerUp={e=>finishSeek(Number(e.currentTarget.value))} onKeyDown={e=>{if(e.key==='Enter') finishSeek(Number(e.currentTarget.value))}} disabled={loading||!duration} aria-label="Playback position"/>
         <div className="time-row"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
