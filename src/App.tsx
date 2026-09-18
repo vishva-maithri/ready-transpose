@@ -102,7 +102,7 @@ export default function App(){
           setLiveCapture(false)
         }
         setPlaying(false)
-        setStatus('YouTube player window closed')
+        setStatus('YouTube player tab closed')
       }
     }
     window.addEventListener('message',handleYoutubeMessage)
@@ -245,7 +245,7 @@ export default function App(){
       engine.current.stop()
       if(youtubeWindow.current&&!youtubeWindow.current.closed)youtubeWindow.current.close()
       const popupUrl=window.location.origin+'/youtube-player?videoId='+encodeURIComponent(videoId)
-      const popup=window.open(popupUrl,'ready-transpose-youtube-player','popup=yes,width=960,height=700,resizable=yes,scrollbars=no')
+      const popup=window.open(popupUrl,'ready-transpose-youtube-player')
       if(!popup){
         setStatus('Chrome blocked the player window — allow pop-ups for Ready Transpose and try again.')
         return
@@ -270,7 +270,7 @@ export default function App(){
     if(loading||liveCapture)return
 
     setLoading(true)
-    setStatus('Select the Ready Transpose player window and enable Share audio…')
+    setStatus('Select the Ready Transpose YouTube Player tab and enable Share audio…')
     setDetectedKey(null)
     setBpm(0)
     setAnalysing(false)
@@ -279,7 +279,7 @@ export default function App(){
       await engine.current.captureTabAudio(pitch)
       setLiveCapture(true)
       setTrackName(youtubeVideoId?(trackName||'YouTube video'):'YouTube tab audio')
-      setStatus('Live — player window audio connected')
+      setStatus('Live — player tab audio connected')
     }catch(error){
       console.error(error)
       setStatus(error instanceof Error?error.message:'Could not capture browser audio')
@@ -482,9 +482,9 @@ export default function App(){
     <section className="input-card">
       <div className="input-heading"><div><p className="label">YOUTUBE TRACK</p><h2>Bring your song</h2></div><Youtube size={28}/></div>
       <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://youtube.com/watch?v=…" aria-label="YouTube URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={loadYoutube}><Youtube size={16}/>Load in Ready Transpose</button></div>
-      {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player window is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate window so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
-      <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'Click Capture, then select the separate “Ready Transpose — YouTube Player” window and enable Share audio.':'Load a YouTube video to open the separate player window.'}</span></div>
-      <button className={`capture-button${liveCapture?" is-live":""}`} disabled={loading&&!liveCapture||!youtubeVideoId||!youtubeReady} onClick={liveCapture?stopCapture:startCapture}>{liveCapture?<><Square size={15} fill="currentColor"/>Stop capture</>:<><Radio size={16}/>Capture player window audio</>}</button>
+      {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player window is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate tab so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
+      <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'Click Capture, then select the separate “Ready Transpose — YouTube Player” tab and enable Share audio.':'Load a YouTube video to open the separate player window.'}</span></div>
+      <button className={`capture-button${liveCapture?" is-live":""}`} disabled={loading&&!liveCapture||!youtubeVideoId||!youtubeReady} onClick={liveCapture?stopCapture:startCapture}>{liveCapture?<><Square size={15} fill="currentColor"/>Stop capture</>:<><Radio size={16}/>Capture player tab audio</>}</button>
       <div className="divider"><span>OR</span></div>
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
     </section>
