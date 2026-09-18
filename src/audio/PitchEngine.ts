@@ -39,6 +39,11 @@ export class PitchEngine {
 
     const audioConstraints: MediaTrackConstraints & Record<string, unknown> = {}
     const supported=navigator.mediaDevices.getSupportedConstraints() as Record<string, boolean>
+
+    // Request a music-friendly capture format when the browser supports it.
+    // These are preferences; the actual values are logged below via getSettings().
+    if(supported.sampleRate) audioConstraints.sampleRate=48000
+    if(supported.channelCount) audioConstraints.channelCount=2
     if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=true
 
     const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
@@ -53,6 +58,15 @@ export class PitchEngine {
     const stream=await navigator.mediaDevices.getDisplayMedia(captureOptions)
 
     const audioTracks=stream.getAudioTracks()
+    const audioTrack=audioTracks[0]
+
+    console.log('🎧 Ready Transpose — capture settings:', {
+      trackSettings:audioTrack?.getSettings(),
+      trackConstraints:audioTrack?.getConstraints(),
+      audioContextSampleRate:this.context!.sampleRate,
+      audioContextState:this.context!.state
+    })
+
     if(audioTracks.length===0){
       stream.getTracks().forEach(track=>track.stop())
       throw new Error('No audio track was shared. Select a YouTube browser tab and enable Share audio.')
