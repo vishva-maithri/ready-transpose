@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
-import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper, Pause, Play, RotateCcw, Upload, Youtube } from 'lucide-react'
+import { ArrowRight, ExternalLink, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper, Pause, Play, Radio, RotateCcw, Square, Upload, Youtube } from 'lucide-react'
 import { PitchEngine } from './audio/PitchEngine'
 import { detectKey, KeyName } from './audio/KeyDetector'
 import { estimateBpm } from './audio/BpmDetector'
@@ -34,6 +34,7 @@ export default function App(){
   const [bpm,setBpm]=useState(0)
   const [analysing,setAnalysing]=useState(false)
   const [partyMode,setPartyMode]=useState(false)
+  const [liveCapture,setLiveCapture]=useState(false)
   const [pitchPulse,setPitchPulse]=useState(false)
   const pitchPulseTimer=useRef<number|undefined>(undefined)
   const seeking=useRef(false)
@@ -139,6 +140,64 @@ export default function App(){
     return ()=>window.clearInterval(timer)
   },[playing])
 
+  const openYoutube=()=>{
+    const value=url.trim()
+    if(!value){
+      setStatus('Paste a YouTube URL first')
+      return
+    }
+
+    try{
+      const youtubeUrl=new URL(value.startsWith('http')?value:`https://${value}`)
+      const host=youtubeUrl.hostname.replace(/^www\\./,'')
+      if(host!=='youtube.com'&&!host.endsWith('.youtube.com')&&host!=='youtu.be'){
+        setStatus('Please enter a YouTube URL')
+        return
+      }
+      window.open(youtubeUrl.toString(),'_blank','noopener,noreferrer')
+      setStatus('YouTube opened — start the song, then capture its tab')
+    }catch{
+      setStatus('Please enter a valid YouTube URL')
+    }
+  }
+
+  const startCapture=async()=>{
+    if(loading||liveCapture)return
+
+    setLoading(true)
+    setStatus('Choose your YouTube tab and share its audio…')
+    setDetectedKey(null)
+    setBpm(0)
+    setAnalysing(false)
+
+    try{
+      await engine.current.captureTabAudio(pitch)
+      setLiveCapture(true)
+      setTrackName('YouTube tab audio')
+      setCurrentTime(0)
+      setDuration(0)
+      setPlaying(true)
+      setStatus('Live — YouTube tab audio')
+    }catch(error){
+      console.error(error)
+      setStatus(error instanceof Error?error.message:'Could not capture browser audio')
+      setLiveCapture(false)
+      setPlaying(false)
+    }finally{
+      setLoading(false)
+    }
+  }
+
+  const stopCapture=()=>{
+    if(!liveCapture)return
+    engine.current.stop()
+    setLiveCapture(false)
+    setPlaying(false)
+    setCurrentTime(0)
+    setDuration(0)
+    setStatus('Capture stopped')
+  }
+
   const loadFile=async(e:ChangeEvent<HTMLInputElement>)=>{
     const file=e.target.files?.[0]
     if(!file||loading)return
@@ -182,6 +241,12 @@ export default function App(){
 
   const togglePlayback=()=>{
     if(loading)return
+
+    if(liveCapture){
+      stopCapture()
+      return
+    }
+
     if(!trackName){
       setStatus('Upload an audio file for the first working prototype')
       return
@@ -280,7 +345,9 @@ export default function App(){
     <section className="hero"><p className="eyebrow">KARAOKE • REAL-TIME PITCH SHIFTING</p><h1>Make any song<br/><span>singable.</span></h1><p className="hero-copy">Load a song, change the pitch, and sing along without changing the tempo.</p></section>
     <section className="input-card">
       <div className="input-heading"><div><p className="label">YOUTUBE TRACK</p><h2>Bring your song</h2></div><Youtube size={28}/></div>
-      <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://youtube.com/watch?v=…" aria-label="YouTube URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={()=>setStatus('YouTube ingestion is the next integration step')}>Load track</button></div>
+      <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://youtube.com/watch?v=…" aria-label="YouTube URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={openYoutube}><ExternalLink size={16}/>Open YouTube</button></div>
+      <div className="capture-hint"><Radio size={15}/><span>Open the video in YouTube, start playback, then capture its browser tab below.</span></div>
+      <button className={`capture-button${liveCapture?" is-live":""}`} disabled={loading&&!liveCapture} onClick={liveCapture?stopCapture:startCapture}>{liveCapture?<><Square size={15} fill="currentColor"/>Stop capture</>:<><Radio size={16}/>Capture YouTube tab audio</>}</button>
       <div className="divider"><span>OR</span></div>
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
     </section>
@@ -290,7 +357,7 @@ export default function App(){
   <span className="party-icon"><PartyPopper size={18}/></span>
   <span className="party-copy"><strong>Party Mode</strong><small>GO FULLSCREEN</small></span>
   <Maximize2 size={17}/>
-</button><button className="secondary-play-button" onClick={restart} disabled={loading||!trackName} aria-label="Restart">{<RotateCcw size={18}/>}</button><button className="play-button" onClick={togglePlayback} disabled={loading} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div></div>
+</button><button className="secondary-play-button" onClick={restart} disabled={loading||!trackName||liveCapture} aria-label="Restart">{<RotateCcw size={18}/>}</button><button className="play-button" onClick={togglePlayback} disabled={loading} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div></div>
       <div className="progress-panel">
         <input className="progress-slider" type="range" min="0" max={duration||0} step="0.1" value={Math.min(currentTime,duration||0)} onPointerDown={beginSeek} onChange={e=>previewSeek(Number(e.target.value))} onPointerUp={e=>finishSeek(Number(e.currentTarget.value))} onKeyDown={e=>{if(e.key==='Enter') finishSeek(Number(e.currentTarget.value))}} disabled={loading||!duration} aria-label="Playback position"/>
         <div className="time-row"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
@@ -298,7 +365,7 @@ export default function App(){
       <div className="pitch-panel"><div className="pitch-heading"><div><span className="label">TRANSPOSE</span><div className={`pitch-value${pitchPulse?' is-changing':''}`}>{pitch>0?'+':''}{pitch}<small> semitones</small></div><span className="keyboard-hint">↑ ↓ to transpose</span></div><div className="pitch-actions"><button className="pitch-nudge" onClick={()=>nudgePitch(-1)} disabled={loading||pitch<=-6} aria-label="Lower pitch">−</button><button className="reset" onClick={()=>changePitch(0)} disabled={loading||pitch===0}>Reset</button><button className="pitch-nudge" onClick={()=>nudgePitch(1)} disabled={loading||pitch>=6} aria-label="Raise pitch">+</button></div></div>
       <input className="pitch-slider" type="range" min="-6" max="6" step="1" value={pitch} onChange={e=>changePitch(Number(e.target.value))} disabled={loading} aria-label="Transpose pitch"/>
       <div className="semitone-grid">{SEMITONES.map(step=><button key={step} className={step===pitch?'active':''} onClick={()=>changePitch(step)} disabled={loading}>{step>0?'+':''}{step}</button>)}</div></div>
-      <div className={`key-analysis${analysing?" is-analysing":""}`}>{analysing ? <div className="key-analysis-loading"><span className="key-icon">🎼</span><div><strong>Analysing track…</strong><p>Detecting the song’s key and tempo.</p></div></div> : detectedKey ? <><div className="key-column"><span className="key-icon">🎼</span><div><span className="label">DETECTED KEY</span><strong className="key-name">{detectedKey.label}</strong><span className="key-confidence">{detectedKey.confidence}% confidence</span>{bpm>0&&<span className={`tempo-value${playing?" is-playing":""}`} style={{animationDuration:`${60/bpm}s`}}>♩ {bpm} BPM</span>}</div></div><div className="key-arrow"><ArrowRight size={24}/></div><div className="key-column current-key"><div><span className="label">WITH CURRENT TRANSPOSE</span><strong className="key-name">{getTransposedKey(detectedKey,pitch)}</strong><span className="key-subtitle">{pitch===0?"Same as the original key":`${pitch>0?"+":""}${pitch} semitones from original`}</span></div></div><div className="key-tip"><Lightbulb size={19}/><div><strong>A better starting point</strong><p>Use the detected key as your reference, then move a few semitones up or down until it feels comfortable.</p></div></div></> : <div className="key-analysis-empty"><span className="key-icon">🎼</span><div><strong>Automatic key analysis</strong><p>Upload a track and we’ll detect its musical key.</p></div></div>}</div>
+      <div className={`key-analysis${analysing?" is-analysing":""}`}>{liveCapture ? <div className="key-analysis-live"><span className="key-icon"><Radio size={24}/></span><div><span className="label">LIVE AUDIO CAPTURE</span><strong>YouTube tab connected</strong><p>Pitch shifting is running in real time. Use the transpose controls above.</p></div></div> : analysing ? <div className="key-analysis-loading"><span className="key-icon">🎼</span><div><strong>Analysing track…</strong><p>Detecting the song’s key and tempo.</p></div></div> : detectedKey ? <><div className="key-column"><span className="key-icon">🎼</span><div><span className="label">DETECTED KEY</span><strong className="key-name">{detectedKey.label}</strong><span className="key-confidence">{detectedKey.confidence}% confidence</span>{bpm>0&&<span className={`tempo-value${playing?" is-playing":""}`} style={{animationDuration:`${60/bpm}s`}}>♩ {bpm} BPM</span>}</div></div><div className="key-arrow"><ArrowRight size={24}/></div><div className="key-column current-key"><div><span className="label">WITH CURRENT TRANSPOSE</span><strong className="key-name">{getTransposedKey(detectedKey,pitch)}</strong><span className="key-subtitle">{pitch===0?"Same as the original key":`${pitch>0?"+":""}${pitch} semitones from original`}</span></div></div><div className="key-tip"><Lightbulb size={19}/><div><strong>A better starting point</strong><p>Use the detected key as your reference, then move a few semitones up or down until it feels comfortable.</p></div></div></> : <div className="key-analysis-empty"><span className="key-icon">🎼</span><div><strong>Automatic key analysis</strong><p>Upload a track and we’ll detect its musical key.</p></div></div>}</div>
     </section>
     <footer><span>Ready Transpose</span><span>Built for singers</span></footer>
   </main>
