@@ -1,42 +1,25 @@
 const clamp=(value:number,min:number,max:number)=>Math.min(max,Math.max(min,value))
 
-const getMonoRms=(buffer:AudioBuffer,start:number,size:number)=>{
-  let energy=0
-  const channelCount=buffer.numberOfChannels
-  const channels=Array.from({length:channelCount},(_,channel)=>buffer.getChannelData(channel))
-
-  for(let i=0;i<size;i++){
-    let sample=0
-    for(const channel of channels) sample+=channel[start+i]/channelCount
-    energy+=sample*sample
-  }
-
-  return Math.sqrt(energy/size)
+const getMonoSample=(buffer:AudioBuffer,index:number)=>{
+  let sample=0
+  for(let channel=0;channel<buffer.numberOfChannels;channel++) sample+=buffer.getChannelData(channel)[index]/buffer.numberOfChannels
+  return sample
 }
 
-const interpolate=(values:Float32Array,index:number)=>{
-  if(index<0||index>=values.length-1) return 0
-  const lower=Math.floor(index)
-  const fraction=index-lower
-  return values[lower]+(values[lower+1]-values[lower])*fraction
-}
-
-const correlationAtLag=(envelope:Float32Array,lag:number)=>{
+const correlationAtLag=(values:Float32Array,lag:number)=>{
   const start=Math.ceil(lag)
-  if(start>=envelope.length) return 0
-
-  let numerator=0
-  let currentEnergy=0
-  let delayedEnergy=0
-
-  for(let i=start;i<envelope.length;i++){
-    const current=envelope[i]
-    const delayed=interpolate(envelope,i-lag)
+  if(start>=values.length)return 0
+  let numerator=0,currentEnergy=0,delayedEnergy=0
+  for(let i=start;i<values.length;i++){
+    const delayedIndex=i-lag
+    const lower=Math.floor(delayedIndex)
+    const fraction=delayedIndex-lower
+    const delayed=lower+1<values.length?values[lower]+(values[lower+1]-values[lower])*fraction:0
+    const current=values[i]
     numerator+=current*delayed
     currentEnergy+=current*current
     delayedEnergy+=delayed*delayed
   }
-
   return numerator/Math.sqrt(currentEnergy*delayedEnergy||1)
 }
 
@@ -44,65 +27,66 @@ export const estimateBpm=(buffer:AudioBuffer):number=>{
   const sampleRate=buffer.sampleRate
   const maxSeconds=60
   const sampleCount=Math.min(buffer.length,Math.floor(sampleRate*maxSeconds))
+  const hop=1024
+  const blockSize=2048
+  const frameCount=Math.floor((sampleCount-blockSize)/hop)
+  if(frameCount<32)return 0
 
-  // 512 samples gives a finer temporal grid than the first version while
-  // keeping the analysis lightweight enough for a browser prototype.
-  const blockSize=512
-  const blockCount=Math.floor(sampleCount/blockSize)
+  // A lightweight onset envelope: compare short-time spectral/energy content
+  // from one frame to the next. The positive change is the onset strength.
+  // Tempo estimation then uses autocorrelation of that envelope.
+  const envelope=new Float32Array(frameCount)
+  let previousLow=0,previousMid=0,previousHigh=0
 
-  if(blockCount<16) return 0
-
-  const envelope=new Float32Array(blockCount)
-  let previousEnergy=0
-
-  // Spectral-flux-style energy envelope. Log compression prevents loud
-  // sections from dominating quieter sections of the song.
-  for(let block=0;block<blockCount;block++){
-    const energy=Math.log1p(getMonoRms(buffer,block*blockSize,blockSize)*100)
-    envelope[block]=Math.max(0,energy-previousEnergy)
-    previousEnergy=energy
-  }
-
-  // Remove the mean and normalize so correlation measures rhythm rather
-  // than absolute track loudness.
-  let average=0
-  for(const value of envelope) average+=value
-  average/=envelope.length
-
-  let variance=0
-  for(let i=0;i<envelope.length;i++){
-    envelope[i]-=average
-    variance+=envelope[i]*envelope[i]
-  }
-
-  if(variance<1e-10) return 0
-
-  const blocksPerMinute=(sampleRate/blockSize)*60
-  let bestBpm=0
-  let bestScore=-Infinity
-
-  // Search in half-BPM increments. Fractional lag interpolation avoids
-  // quantization caused by rounding the beat period to a whole block.
-  for(let bpm=50;bpm<=200;bpm+=0.5){
-    const lag=blocksPerMinute/bpm
-    if(lag>=envelope.length) continue
-
-    const fundamental=correlationAtLag(envelope,lag)
-    const doubleBeat=correlationAtLag(envelope,lag*2)
-    const halfBeat=lag/2<1?0:correlationAtLag(envelope,lag/2)
-
-    // A real beat should have repeated energy at the beat period and often
-    // at the next subdivision. Small harmonic support improves stability
-    // without aggressively forcing double-time or half-time interpretations.
-    const score=fundamental*0.68+doubleBeat*0.22+halfBeat*0.10
-
-    if(score>bestScore){
-      bestScore=score
-      bestBpm=bpm
+  for(let frame=0;frame<frameCount;frame++){
+    const start=frame*hop
+    let low=0,mid=0,high=0
+    for(let i=0;i<blockSize;i+=4){
+      const sample=getMonoSample(buffer,start+i)
+      const next=getMonoSample(buffer,Math.min(sampleCount-1,start+i+1))
+      const diff=Math.abs(next-sample)
+      const frequencyProxy=Math.abs(sample-next)
+      low+=sample*sample
+      mid+=frequencyProxy
+      high+=diff
     }
+    low=Math.sqrt(low/(blockSize/4))
+    mid/=blockSize/4
+    high/=blockSize/4
+
+    const onset=Math.max(0,mid-previousMid)*0.55+Math.max(0,high-previousHigh)*0.35+Math.max(0,low-previousLow)*0.10
+    envelope[frame]=Math.log1p(onset*100)
+    previousLow=low;previousMid=mid;previousHigh=high
   }
 
-  // Very small floating-point noise can produce a .5 result when the song
-  // clearly sits on a whole-number tempo.
-  return Number.isInteger(bestBpm)?bestBpm:clamp(Math.round(bestBpm*2)/2,50,200)
+  // Remove the DC component and lightly normalize the onset envelope.
+  let average=0
+  for(const value of envelope)average+=value
+  average/=envelope.length
+  let variance=0
+  for(let i=0;i<envelope.length;i++){envelope[i]-=average;variance+=envelope[i]*envelope[i]}
+  if(variance<1e-8)return 0
+
+  const frameRate=sampleRate/hop
+  const candidates:{bpm:number;score:number}[]=[]
+  for(let bpm=60;bpm<=180;bpm+=0.5){
+    const lag=frameRate*60/bpm
+    if(lag<1||lag>=envelope.length/2)continue
+    const base=correlationAtLag(envelope,lag)
+    const half=correlationAtLag(envelope,lag/2)
+    const double=correlationAtLag(envelope,lag*2)
+    // Prefer the fundamental but use subdivisions to stabilize sparse drums.
+    const score=base*0.72+half*0.16+double*0.12
+    candidates.push({bpm,score})
+  }
+
+  candidates.sort((a,b)=>b.score-a.score)
+  if(!candidates.length)return 0
+
+  // Avoid common octave errors by comparing the best candidate against its
+  // doubled/halved alternatives and preferring the strongest fundamental.
+  const best=candidates[0]
+  const alternatives=candidates.filter(candidate=>Math.abs(candidate.bpm-best.bpm*2)<1||Math.abs(candidate.bpm-best.bpm/2)<1)
+  const selected=alternatives.length>0?alternatives.reduce((winner,candidate)=>candidate.score>winner.score?candidate:winner,best):best
+  return clamp(Math.round(selected.bpm),60,180)
 }
