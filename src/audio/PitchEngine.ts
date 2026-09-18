@@ -236,6 +236,10 @@ export class PitchEngine {
     return this.buffer
   }
 
+  getCaptureStream() {
+    return this.captureStream
+  }
+
   private cleanupCapture() {
     this.captureStream?.getTracks().forEach(track=>track.stop())
     this.captureStream=null
