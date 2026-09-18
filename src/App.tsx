@@ -228,7 +228,13 @@ export default function App(){
     setCurrentTime(engine.current.getCurrentTime())
   }
 
-  const changePitch=(value:number)=>{setPitch(value);if(playing&&!loading)engine.current.setPitch(value)}
+  const changePitch=(value:number)=>{
+    if(loading) return
+    setPitch(value)
+    if(playing) engine.current.setPitch(value)
+  }
+
+  const nudgePitch=(delta:number)=>changePitch(Math.min(6,Math.max(-6,pitch+delta)))
 
 
   if(partyMode) return <main className="party-mode">
@@ -250,9 +256,9 @@ export default function App(){
         <button className="party-play" onClick={togglePlayback} disabled={loading} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={34}/>:<Play fill="currentColor" size={34}/>}</button>
       </div>
       <div className="party-pitch">
-        <button onClick={()=>changePitch(Math.max(-6,pitch-1))} disabled={loading} aria-label="Lower pitch">−</button>
+        <button onClick={()=>nudgePitch(-1)} disabled={loading} aria-label="Lower pitch">−</button>
         <div><span className="label">TRANSPOSE</span><strong>{pitch>0?'+':''}{pitch}</strong><span>semitones</span></div>
-        <button onClick={()=>changePitch(Math.min(6,pitch+1))} disabled={loading} aria-label="Raise pitch">+</button>
+        <button onClick={()=>nudgePitch(1)} disabled={loading} aria-label="Raise pitch">+</button>
       </div>
       <div className="party-analysis">
         <div><span className="label">CURRENT KEY</span><strong>{detectedKey?getTransposedKey(detectedKey,pitch):'—'}</strong></div>
@@ -278,8 +284,10 @@ export default function App(){
         <input className="progress-slider" type="range" min="0" max={duration||0} step="0.1" value={Math.min(currentTime,duration||0)} onPointerDown={beginSeek} onChange={e=>previewSeek(Number(e.target.value))} onPointerUp={e=>finishSeek(Number(e.currentTarget.value))} onKeyDown={e=>{if(e.key==='Enter') finishSeek(Number(e.currentTarget.value))}} disabled={loading||!duration} aria-label="Playback position"/>
         <div className="time-row"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
       </div>
-      <div className="pitch-panel"><div className="pitch-heading"><div><span className="label">TRANSPOSE</span><div className="pitch-value">{pitch>0?'+':''}{pitch}<small> semitones</small></div></div><button className="reset" onClick={()=>changePitch(0)} disabled={loading}>Reset</button></div>
+      <div className="pitch-panel"><div className="pitch-heading"><div><span className="label">TRANSPOSE</span><div className="pitch-value">{pitch>0?'+':''}{pitch}<small> semitones</small></div><span className="keyboard-hint">↑ ↓ to transpose</span></div><div className="pitch-actions"><button className="pitch-nudge" onClick={()=>nudgePitch(-1)} disabled={loading||pitch<=-6} aria-label="Lower pitch">−</button><button className="reset" onClick={()=>changePitch(0)} disabled={loading||pitch===0}>Reset</button><button className="pitch-nudge" onClick={()=>nudgePitch(1)} disabled={loading||pitch>=6} aria-label="Raise pitch">+</button></div></div>
       <input className="pitch-slider" type="range" min="-6" max="6" step="1" value={pitch} onChange={e=>changePitch(Number(e.target.value))} disabled={loading} aria-label="Transpose pitch"/>
+      <div className="pitch-quick-grid">{[-3,-2,-1,0,1,2,3].map(step=><button key={step} className={step===pitch?'active':''} onClick={()=>changePitch(step)} disabled={loading}>{step>0?'+':''}{step}</button>)}</div>
+      <div className="pitch-more-label">More range</div>
       <div className="semitone-grid">{SEMITONES.map(step=><button key={step} className={step===pitch?'active':''} onClick={()=>changePitch(step)} disabled={loading}>{step>0?'+':''}{step}</button>)}</div></div>
       <div className={`key-analysis${analysing?" is-analysing":""}`}>{analysing ? <div className="key-analysis-loading"><span className="key-icon">🎼</span><div><strong>Analysing track…</strong><p>Detecting the song’s key and tempo.</p></div></div> : detectedKey ? <><div className="key-column"><span className="key-icon">🎼</span><div><span className="label">DETECTED KEY</span><strong className="key-name">{detectedKey.label}</strong><span className="key-confidence">{detectedKey.confidence}% confidence</span>{bpm>0&&<span className={`tempo-value${playing?" is-playing":""}`} style={{animationDuration:`${60/bpm}s`}}>♩ {bpm} BPM</span>}</div></div><div className="key-arrow"><ArrowRight size={24}/></div><div className="key-column current-key"><div><span className="label">WITH CURRENT TRANSPOSE</span><strong className="key-name">{getTransposedKey(detectedKey,pitch)}</strong><span className="key-subtitle">{pitch===0?"Same as the original key":`${pitch>0?"+":""}${pitch} semitones from original`}</span></div></div><div className="key-tip"><Lightbulb size={19}/><div><strong>A better starting point</strong><p>Use the detected key as your reference, then move a few semitones up or down until it feels comfortable.</p></div></div></> : <div className="key-analysis-empty"><span className="key-icon">🎼</span><div><strong>Automatic key analysis</strong><p>Upload a track and we’ll detect its musical key.</p></div></div>}</div>
     </section>
