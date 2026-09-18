@@ -59,9 +59,11 @@ export class PitchEngine {
     const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
       video:true,
       audio:audioConstraints,
-      preferCurrentTab:true,
-      selfBrowserSurface:'include',
+      video:{displaySurface:'window'},
+      preferCurrentTab:false,
+      selfBrowserSurface:'exclude',
       systemAudio:'exclude',
+      windowAudio:'window',
       surfaceSwitching:'include',
       monitorTypeSurfaces:'exclude'
     }
