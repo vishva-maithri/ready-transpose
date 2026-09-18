@@ -322,7 +322,7 @@ export default function App(){
       setTrackName('Loading YouTube video…')
       setStatus(autoCapture?'Choose the player tab and enable Share audio…':'Player window opened — waiting for YouTube…')
       if(autoCapture){
-        window.setTimeout(()=>startCapture(),0)
+        startCapture()
       }
     }catch{
       setStatus('Please enter a valid YouTube URL')
@@ -550,10 +550,10 @@ export default function App(){
           if(e.key==='ArrowUp'&&youtubeSuggestions.length){e.preventDefault();setYoutubeActiveSuggestion(index=>Math.max(index-1,-1))}
           if(e.key==='Enter'){
             if(youtubeActiveSuggestion>=0&&youtubeSuggestions[youtubeActiveSuggestion]){e.preventDefault();selectYoutubeSuggestion(youtubeSuggestions[youtubeActiveSuggestion])}
-            else if(isYoutubeUrl(url.trim()))loadYoutube()
+            else if(isYoutubeUrl(url.trim()))loadYoutube(url,true)
           }
           if(e.key==='Escape'){setYoutubeSuggestions([]);setYoutubeActiveSuggestion(-1)}
-        }} onFocus={()=>{if(url.trim().length>=2&&!isYoutubeUrl(url.trim())&&!youtubeSearchError)setYoutubeSearchError('')}} placeholder="Search YouTube or paste a link…" aria-label="YouTube search or URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={loadYoutube}><Youtube size={16}/>Load</button></div>
+        }} onFocus={()=>{if(url.trim().length>=2&&!isYoutubeUrl(url.trim())&&!youtubeSearchError)setYoutubeSearchError('')}} placeholder="Search YouTube or paste a link…" aria-label="YouTube search or URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={()=>loadYoutube(url,true)}><Youtube size={16}/>Start</button></div>
         {(youtubeSearchLoading||youtubeSuggestions.length>0||youtubeSearchError)&&<div className="youtube-suggestions" role="listbox" aria-label="YouTube search results">
           {youtubeSearchLoading&&<div className="youtube-suggestion-message">Searching YouTube…</div>}
           {!youtubeSearchLoading&&youtubeSuggestions.map((suggestion,index)=><button key={suggestion.videoId} className={`youtube-suggestion${index===youtubeActiveSuggestion?' is-active':''}`} onMouseDown={e=>e.preventDefault()} onClick={()=>selectYoutubeSuggestion(suggestion)} role="option" aria-selected={index===youtubeActiveSuggestion}>
