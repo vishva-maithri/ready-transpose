@@ -27,8 +27,21 @@ export default function App(){
     if(!playing) return
     const timer=window.setInterval(()=>{
       if(seeking.current) return
-      setCurrentTime(engine.current.getCurrentTime())
-      setDuration(engine.current.getDuration())
+
+      const audioPlaying=engine.current.isPlaying()
+      const audioTime=engine.current.getCurrentTime()
+      const audioDuration=engine.current.getDuration()
+
+      setDuration(audioDuration)
+
+      if(!audioPlaying){
+        setCurrentTime(audioDuration)
+        setPlaying(false)
+        setStatus('Finished')
+        return
+      }
+
+      setCurrentTime(audioTime)
     },100)
     return ()=>window.clearInterval(timer)
   },[playing])
