@@ -224,7 +224,7 @@ export default function App(){
       return
     }
 
-    const isUrl=/^(https?:\\/\\/)?(www\\.)?(youtube\\.com|youtu\\.be)(\\/|$)/i.test(query)
+    const isUrl=/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)(\/|$)/i.test(query)
     if(isUrl){
       loadYoutube()
       return
