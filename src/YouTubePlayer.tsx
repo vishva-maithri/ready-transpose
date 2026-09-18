@@ -67,6 +67,7 @@ export type YouTubePlayerHandle = {
   seek: (seconds:number)=>void
   getCurrentTime:()=>number
   getDuration:()=>number
+  getState:()=>YouTubePlayerState
 }
 
 type Props={
@@ -95,7 +96,8 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
     pause:()=>playerRef.current?.pauseVideo(),
     seek:(seconds)=>playerRef.current?.seekTo(seconds,true),
     getCurrentTime:()=>playerRef.current?.getCurrentTime()??0,
-    getDuration:()=>playerRef.current?.getDuration()??0
+    getDuration:()=>playerRef.current?.getDuration()??0,
+    getState:()=>((playerRef.current as YouTubePlayerApi & {getPlayerState?:()=>number})?.getPlayerState?.()??-1) as YouTubePlayerState
   }),[])
 
   useEffect(()=>{
