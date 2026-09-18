@@ -51,7 +51,10 @@ export class PitchEngine {
     if(supported.echoCancellation) audioConstraints.echoCancellation=false
     if(supported.noiseSuppression) audioConstraints.noiseSuppression=false
 
-    if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=true
+    // Diagnostic: keep the browser's original tab audio audible while we verify that
+    // the captured stream is reaching the processed output path. If this restores
+    // sound, the next step is to separate/suppress the original path cleanly.
+    if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=false
 
     const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
       video:true,
