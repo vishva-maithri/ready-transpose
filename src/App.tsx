@@ -1,5 +1,5 @@
 import { ChangeEvent, useRef, useState } from 'react'
-import { Link2, Music2, Play, Upload, Youtube } from 'lucide-react'
+import { Link2, Music2, Pause, Play, Upload, Youtube } from 'lucide-react'
 import { PitchEngine } from './audio/PitchEngine'
 
 const SEMITONES=Array.from({length:13},(_,i)=>i-6)
@@ -18,10 +18,24 @@ export default function App(){
     try{await engine.current.load(file);setPitch(0);setPlaying(false);setStatus('Ready to play')}
     catch(error){console.error(error);setStatus('Could not decode this audio file')}
   }
-  const start=()=>{
-    if(!trackName){setStatus('Upload an audio file for the first working prototype');return}
-    engine.current.play(pitch);setPlaying(true);setStatus('Playing')
+
+  const togglePlayback=()=>{
+    if(!trackName){
+      setStatus('Upload an audio file for the first working prototype')
+      return
+    }
+
+    if(playing){
+      engine.current.pause()
+      setPlaying(false)
+      setStatus('Paused')
+    }else{
+      engine.current.play(pitch)
+      setPlaying(true)
+      setStatus('Playing')
+    }
   }
+
   const changePitch=(value:number)=>{setPitch(value);if(playing)engine.current.setPitch(value)}
 
   return <main className="app-shell">
@@ -34,7 +48,7 @@ export default function App(){
       <label className="upload-zone"><Upload size={22}/><strong>Upload an audio file</strong><span>MP3, WAV, M4A — used for the working audio prototype</span><input type="file" accept="audio/*" onChange={loadFile}/></label>
     </section>
     <section className="player-card">
-      <div className="track-row"><div className="track-art"><Music2/></div><div className="track-info"><span className="status">{status}</span><strong>{trackName||'No track loaded'}</strong></div><button className="play-button" onClick={start} aria-label="Play"><Play fill="currentColor" size={21}/></button></div>
+      <div className="track-row"><div className="track-art"><Music2/></div><div className="track-info"><span className="status">{status}</span><strong>{trackName||'No track loaded'}</strong></div><button className="play-button" onClick={togglePlayback} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div>
       <div className="pitch-panel"><div className="pitch-heading"><div><span className="label">TRANSPOSE</span><div className="pitch-value">{pitch>0?'+':''}{pitch}<small> semitones</small></div></div><button className="reset" onClick={()=>changePitch(0)}>Reset</button></div>
       <input className="pitch-slider" type="range" min="-6" max="6" step="1" value={pitch} onChange={e=>changePitch(Number(e.target.value))} aria-label="Transpose pitch"/>
       <div className="semitone-grid">{SEMITONES.map(step=><button key={step} className={step===pitch?'active':''} onClick={()=>changePitch(step)}>{step>0?'+':''}{step}</button>)}</div></div>
