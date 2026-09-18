@@ -68,7 +68,7 @@ After Step 1 is validated:
 
 Then add:
 
-- BPM estimation
+- BPM estimation — **complete**
 - Musical key estimation
 - Confidence score
 - Display of detected key
