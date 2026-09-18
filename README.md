@@ -74,14 +74,19 @@ Then add:
 - Display of detected key
 - Display of the current key after transposition
 
-## Step 4 — Singer assistance
+## Step 4 — Party UX polish
 
-Then add:
+Keep the experience intentionally simple: load a song, play it, change the pitch, and sing.
 
-- User vocal-range input
-- Suggested transpose
-- Quick key buttons
-- Saved preferences
+Current polish:
+
+- Keyboard shortcut: **Space** for play/pause
+- Keyboard shortcuts: **Left/Right arrows** for pitch changes
+- Keyboard shortcut: **0** to reset pitch
+- Larger, easier-to-tap semitone controls
+- Clearer party-first hero copy
+
+Future polish can include a fullscreen party mode and other lightweight presentation improvements, without adding setup or singer profiles.
 
 ## Step 5 — YouTube integration
 
