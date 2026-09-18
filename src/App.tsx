@@ -129,9 +129,11 @@ export default function App(){
       setDuration(audioDuration)
 
       if(!audioPlaying){
+        const wasCapturing=engine.current.isCapturing()
         setCurrentTime(audioDuration)
         setPlaying(false)
-        setStatus('Finished')
+        setLiveCapture(false)
+        setStatus(wasCapturing?'Capture ended':'Finished')
         return
       }
 
@@ -149,7 +151,7 @@ export default function App(){
 
     try{
       const youtubeUrl=new URL(value.startsWith('http')?value:`https://${value}`)
-      const host=youtubeUrl.hostname.replace(/^www\\./,'')
+      const host=youtubeUrl.hostname.replace(/^www\./,'')
       if(host!=='youtube.com'&&!host.endsWith('.youtube.com')&&host!=='youtu.be'){
         setStatus('Please enter a YouTube URL')
         return
@@ -203,6 +205,7 @@ export default function App(){
     if(!file||loading)return
 
     setLoading(true)
+    setLiveCapture(false)
     setStatus('Loading audio…')
     setDetectedKey(null)
     setBpm(0)
