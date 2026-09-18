@@ -19,11 +19,13 @@ export default function App(){
   const [playing,setPlaying]=useState(false)
   const [currentTime,setCurrentTime]=useState(0)
   const [duration,setDuration]=useState(0)
+  const seeking=useRef(false)
   const engine=useRef(new PitchEngine())
 
   useEffect(()=>{
     if(!playing) return
     const timer=window.setInterval(()=>{
+      if(seeking.current) return
       setCurrentTime(engine.current.getCurrentTime())
       setDuration(engine.current.getDuration())
     },100)
@@ -85,7 +87,7 @@ export default function App(){
     <section className="player-card">
       <div className="track-row"><div className="track-art"><Music2/></div><div className="track-info"><span className="status">{status}</span><strong>{trackName||'No track loaded'}</strong></div><button className="play-button" onClick={togglePlayback} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div>
       <div className="progress-panel">
-        <input className="progress-slider" type="range" min="0" max={duration||0} step="0.1" value={Math.min(currentTime,duration||0)} onChange={e=>seek(Number(e.target.value))} disabled={!duration} aria-label="Playback position"/>
+        <input className="progress-slider" type="range" min="0" max={duration||0} step="0.1" value={Math.min(currentTime,duration||0)} onPointerDown={()=>{seeking.current=true}} onPointerUp={e=>{seeking.current=false;seek(Number(e.currentTarget.value))}} onChange={e=>seek(Number(e.target.value))} disabled={!duration} aria-label="Playback position"/>
         <div className="time-row"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
       </div>
       <div className="pitch-panel"><div className="pitch-heading"><div><span className="label">TRANSPOSE</span><div className="pitch-value">{pitch>0?'+':''}{pitch}<small> semitones</small></div></div><button className="reset" onClick={()=>changePitch(0)}>Reset</button></div>
