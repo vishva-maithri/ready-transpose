@@ -266,45 +266,6 @@ export default function App(){
     }
   }
 
-  const analyseCapturedTrack=async()=>{
-    const stream=engine.current.getCaptureStream()
-    const audioTrack=stream?.getAudioTracks()[0]
-    if(!audioTrack)return
-
-    setAnalysing(true)
-    setStatus('Listening for the key and tempo…')
-
-    try{
-      const analysisStream=new MediaStream([audioTrack])
-      const recorder=new MediaRecorder(analysisStream)
-      const chunks:Blob[]=[]
-      recorder.ondataavailable=event=>{if(event.data.size>0)chunks.push(event.data)}
-
-      const recording=new Promise<Blob>((resolve,reject)=>{
-        recorder.onerror=()=>reject(new Error('Could not analyse captured audio'))
-        recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType||'audio/webm'}))
-      })
-
-      recorder.start()
-      await new Promise(resolve=>window.setTimeout(resolve,15000))
-      if(recorder.state!=='inactive')recorder.stop()
-      const blob=await recording
-      const analysisContext=new AudioContext()
-      const buffer=await analysisContext.decodeAudioData(await blob.arrayBuffer())
-      const key=detectKey(buffer)
-      const detectedBpm=estimateBpm(buffer)
-      setDetectedKey(key)
-      setBpm(detectedBpm)
-      await analysisContext.close()
-      setStatus('Live — player tab audio connected')
-    }catch(error){
-      console.error('Key analysis failed',error)
-      setStatus('Live — player tab audio connected')
-    }finally{
-      setAnalysing(false)
-    }
-  }
-
   const startCapture=async()=>{
     if(loading||liveCapture)return
 
@@ -319,7 +280,6 @@ export default function App(){
       setLiveCapture(true)
       setTrackName(youtubeVideoId?(trackName||'YouTube video'):'YouTube tab audio')
       setStatus('Live — player tab audio connected')
-      void analyseCapturedTrack()
     }catch(error){
       console.error(error)
       setStatus(error instanceof Error?error.message:'Could not capture browser audio')
@@ -507,11 +467,11 @@ export default function App(){
         <div><span className="label">TRANSPOSE</span><strong>{pitch>0?'+':''}{pitch}</strong><span>semitones</span></div>
         <button onClick={()=>nudgePitch(1)} disabled={loading} aria-label="Raise pitch">+</button>
       </div>
-      <div className="party-analysis">
+      {!youtubeVideoId&&<div className="party-analysis">
         <div><span className="label">CURRENT KEY</span><strong>{detectedKey?getTransposedKey(detectedKey,pitch):'—'}</strong></div>
         <div><span className="label">ORIGINAL KEY</span><strong>{detectedKey?.label||'—'}</strong></div>
         <div><span className="label">TEMPO</span><strong>{bpm>0?bpm+' BPM':'—'}</strong></div>
-      </div>
+      </div>}
       <p className="party-hint">← → seek 5 sec&nbsp;&nbsp; • &nbsp;&nbsp;↑ ↓ transpose&nbsp;&nbsp; • &nbsp;&nbsp;Space play/pause&nbsp;&nbsp; • &nbsp;&nbsp;0 reset</p>
     </div>
   </main>
@@ -542,7 +502,7 @@ export default function App(){
       <div className="pitch-panel"><div className="pitch-heading"><div><span className="label">TRANSPOSE</span><div className={`pitch-value${pitchPulse?' is-changing':''}`}>{pitch>0?'+':''}{pitch}<small> semitones</small></div><span className="keyboard-hint">↑ ↓ to transpose</span></div><div className="pitch-actions"><button className="pitch-nudge" onClick={()=>nudgePitch(-1)} disabled={loading||pitch<=-6} aria-label="Lower pitch">−</button><button className="reset" onClick={()=>changePitch(0)} disabled={loading||pitch===0}>Reset</button><button className="pitch-nudge" onClick={()=>nudgePitch(1)} disabled={loading||pitch>=6} aria-label="Raise pitch">+</button></div></div>
       <input className="pitch-slider" type="range" min="-6" max="6" step="1" value={pitch} onChange={e=>changePitch(Number(e.target.value))} disabled={loading} aria-label="Transpose pitch"/>
       <div className="semitone-grid">{SEMITONES.map(step=><button key={step} className={step===pitch?'active':''} onClick={()=>changePitch(step)} disabled={loading}>{step>0?'+':''}{step}</button>)}</div></div>
-      <div className={`key-analysis${analysing?" is-analysing":""}`}>{analysing ? <div className="key-analysis-loading"><span className="key-icon">🎼</span><div><span className="label">LIVE KEY ANALYSIS</span><strong>Listening for the key & tempo…</strong><p>Listening to the YouTube player audio for a few seconds.</p></div></div> : detectedKey ? <><div className="key-column"><span className="key-icon">🎼</span><div><span className="label">{liveCapture?"DETECTED KEY":"DETECTED KEY"}</span><strong className="key-name">{detectedKey.label}</strong><span className="key-confidence">{detectedKey.confidence}% confidence</span>{bpm>0&&<span className={`tempo-value${playing?" is-playing":""}`} style={{animationDuration:`${60/bpm}s`}}>♩ {bpm} BPM</span>}</div></div><div className="key-arrow"><ArrowRight size={24}/></div><div className="key-column current-key"><div><span className="label">WITH CURRENT TRANSPOSE</span><strong className="key-name">{getTransposedKey(detectedKey,pitch)}</strong><span className="key-subtitle">{pitch===0?"Same as the original key":`${pitch>0?"+":""}${pitch} semitones from original`}</span></div></div><div className="key-tip"><Lightbulb size={19}/><div><strong>A better starting point</strong><p>Use the detected key as your reference, then move a few semitones up or down until it feels comfortable.</p></div></div></> : liveCapture ? <div className="key-analysis-live"><span className="key-icon"><Radio size={24}/></span><div><span className="label">LIVE AUDIO CAPTURE</span><strong>YouTube tab connected</strong><p>Pitch shifting is running in real time. Key analysis will appear shortly.</p></div></div> : <div className="key-analysis-empty"><span className="key-icon">🎼</span><div><strong>Automatic key analysis</strong><p>Upload a track and we’ll detect its musical key.</p></div></div>}</div>
+      <div className={`key-analysis${analysing?" is-analysing":""}`}>{youtubeVideoId ? <div className="key-analysis-live"><span className="key-icon"><Radio size={24}/></span><div><span className="label">LIVE AUDIO CAPTURE</span><strong>{liveCapture?"YouTube tab connected":"YouTube player ready"}</strong><p>Real-time pitch shifting is available for the YouTube player. Key and tempo analysis is not used for YouTube tracks.</p></div></div> : analysing ? <div className="key-analysis-loading"><span className="key-icon">🎼</span><div><span className="label">TRACK ANALYSIS</span><strong>Analysing key & tempo…</strong><p>Detecting the musical key and tempo from the uploaded audio.</p></div></div> : detectedKey ? <><div className="key-column"><span className="key-icon">🎼</span><div><span className="label">DETECTED KEY</span><strong className="key-name">{detectedKey.label}</strong><span className="key-confidence">{detectedKey.confidence}% confidence</span>{bpm>0&&<span className={`tempo-value${playing?" is-playing":""}`} style={{animationDuration:`${60/bpm}s`}}>♩ {bpm} BPM</span>}</div></div><div className="key-arrow"><ArrowRight size={24}/></div><div className="key-column current-key"><div><span className="label">WITH CURRENT TRANSPOSE</span><strong className="key-name">{getTransposedKey(detectedKey,pitch)}</strong><span className="key-subtitle">{pitch===0?"Same as the original key":`${pitch>0?"+":""}${pitch} semitones from original`}</span></div></div><div className="key-tip"><Lightbulb size={19}/><div><strong>A better starting point</strong><p>Use the detected key as your reference, then move a few semitones up or down until it feels comfortable.</p></div></div></> : <div className="key-analysis-empty"><span className="key-icon">🎼</span><div><strong>Automatic key analysis</strong><p>Upload a track and we’ll detect its musical key and tempo.</p></div></div>}</div>
     </section>
     <footer><span>Ready Transpose</span><span>Built for singers</span></footer>
   </main>
