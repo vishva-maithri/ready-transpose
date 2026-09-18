@@ -554,7 +554,7 @@ export default function App(){
           {youtubeSearchLoading&&<div className="youtube-suggestion-message">Searching YouTube…</div>}
           {!youtubeSearchLoading&&youtubeSuggestions.map((suggestion,index)=><button key={suggestion.videoId} className={`youtube-suggestion${index===youtubeActiveSuggestion?' is-active':''}`} onMouseDown={e=>e.preventDefault()} onClick={()=>selectYoutubeSuggestion(suggestion)} role="option" aria-selected={index===youtubeActiveSuggestion}>
             <img src={suggestion.thumbnail} alt="" />
-            <span><strong dangerouslySetInnerHTML={{__html:suggestion.title}}/><small>{suggestion.channelTitle}</small></span>
+            <span><strong>{suggestion.title}</strong><small>{suggestion.channelTitle}</small></span>
           </button>)}
           {!youtubeSearchLoading&&youtubeSuggestions.length===0&&youtubeSearchError&&<div className="youtube-suggestion-message">{youtubeSearchError}</div>}
         </div>}
