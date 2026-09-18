@@ -57,12 +57,11 @@ export class PitchEngine {
     if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=true
 
     const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
-      video:{displaySurface:'window'},
+      video:{displaySurface:'browser'},
       audio:audioConstraints,
       preferCurrentTab:false,
       selfBrowserSurface:'exclude',
       systemAudio:'exclude',
-      windowAudio:'window',
       surfaceSwitching:'include',
       monitorTypeSurfaces:'exclude'
     }
