@@ -31,12 +31,43 @@
 .party-mode-button{display:grid;place-items:center;width:36px;height:36px;border:1px solid #303542;border-radius:50%;color:#a1a6b2;background:#141720}
 .party-mode-button:disabled{opacity:.35;cursor:not-allowed}
 
-.pitch-quick-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}
-.pitch-quick-grid button{min-height:48px;border:1px solid #303542;border-radius:10px;color:#aeb3bf;background:#151821;font-size:14px;font-weight:750;transition:transform .12s ease,background .12s ease,border-color .12s ease}
-.pitch-quick-grid button:hover:not(:disabled){transform:translateY(-1px);border-color:#4b5060}
-.pitch-quick-grid button.active{color:white;background:#7c5cff;border-color:#7c5cff;box-shadow:0 8px 24px rgba(124,92,255,.18)}
-.pitch-more-label{margin-top:12px;color:#5f6470;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
-
 .pitch-actions{display:flex;align-items:center;gap:7px}
 .pitch-nudge{display:grid;place-items:center;width:34px;height:34px;border:1px solid #303542;border-radius:9px;color:#d9dbe2;background:#141720;font-size:20px;line-height:1}
 .pitch-nudge:disabled{opacity:.3;cursor:not-allowed}
+
+@media(max-width:650px){
+  .topbar{padding:0 2px}
+  .hero h1{font-size:clamp(44px,14vw,64px)}
+  .hero-copy{font-size:14px;line-height:1.55;padding:0 8px}
+  .url-row{gap:8px}
+  .url-row input{min-width:0;width:100%;flex-basis:100%}
+  .primary-button{min-height:44px}
+  .upload-zone{min-height:120px;justify-content:center;padding:22px 14px}
+  .track-row{gap:10px}
+  .track-art{width:46px;height:46px;border-radius:11px}
+  .track-info strong{font-size:13px}
+  .player-actions{margin-left:auto}
+  .party-mode-button,.secondary-play-button{width:42px;height:42px}
+  .play-button{width:50px;height:50px}
+  .pitch-panel{margin-top:20px;padding:18px 15px}
+  .pitch-heading{align-items:flex-start}
+  .pitch-value{font-size:32px}
+  .pitch-nudge{width:40px;height:40px;font-size:22px}
+  .reset{padding:10px 4px}
+  .pitch-slider{height:28px;margin:20px 0 12px}
+  .semitone-grid{gap:6px}
+  .semitone-grid button{min-height:44px;font-size:12px}
+  .key-analysis{padding:18px 15px}
+  .key-name{font-size:22px}
+}
+@media(max-width:380px){
+  .app-shell{width:calc(100% - 14px)}
+  .input-card,.player-card{padding:14px}
+  .prototype{display:none}
+  .track-art{display:none}
+  .player-actions{gap:4px}
+  .party-mode-button,.secondary-play-button{width:38px;height:38px}
+  .play-button{width:46px;height:46px}
+  .semitone-grid{gap:4px}
+  .semitone-grid button{min-height:42px;padding:6px 0}
+}
