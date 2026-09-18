@@ -1,6 +1,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { Link2, Music2, Pause, Play, RotateCcw, Upload, Youtube } from 'lucide-react'
 import { PitchEngine } from './audio/PitchEngine'
+import { detectKey, KeyName } from './audio/KeyDetector'
 
 const SEMITONES=Array.from({length:13},(_,i)=>i-6)
 
@@ -20,6 +21,8 @@ export default function App(){
   const [loading,setLoading]=useState(false)
   const [currentTime,setCurrentTime]=useState(0)
   const [duration,setDuration]=useState(0)
+  const [detectedKey,setDetectedKey]=useState<KeyName|null>(null)
+  const [analysing,setAnalysing]=useState(false)
   const seeking=useRef(false)
   const pendingSeek=useRef<number|null>(null)
   const engine=useRef(new PitchEngine())
@@ -53,6 +56,8 @@ export default function App(){
 
     setLoading(true)
     setStatus('Loading audio…')
+    setDetectedKey(null)
+    setAnalysing(false)
     try{
       await engine.current.load(file)
       setTrackName(file.name)
@@ -60,7 +65,19 @@ export default function App(){
       setPlaying(false)
       setCurrentTime(0)
       setDuration(engine.current.getDuration())
-      setStatus('Ready to play')
+      setAnalysing(true)
+      setStatus('Analysing key…')
+      window.setTimeout(()=>{
+        try{
+          const buffer=engine.current.getAudioBuffer()
+          if(buffer) setDetectedKey(detectKey(buffer))
+        }catch(error){
+          console.error(error)
+        }finally{
+          setAnalysing(false)
+          setStatus('Ready to play')
+        }
+      },0)
     }catch(error){
       console.error(error)
       setStatus('Could not load this audio file')
@@ -140,7 +157,7 @@ export default function App(){
       <div className="pitch-panel"><div className="pitch-heading"><div><span className="label">TRANSPOSE</span><div className="pitch-value">{pitch>0?'+':''}{pitch}<small> semitones</small></div></div><button className="reset" onClick={()=>changePitch(0)} disabled={loading}>Reset</button></div>
       <input className="pitch-slider" type="range" min="-6" max="6" step="1" value={pitch} onChange={e=>changePitch(Number(e.target.value))} disabled={loading} aria-label="Transpose pitch"/>
       <div className="semitone-grid">{SEMITONES.map(step=><button key={step} className={step===pitch?'active':''} onClick={()=>changePitch(step)} disabled={loading}>{step>0?'+':''}{step}</button>)}</div></div>
-      <div className="key-hint"><span>🎤</span><div><strong>Next: automatic key analysis</strong><p>We’ll detect the song key and suggest a starting transpose for your voice.</p></div></div>
+      <div className={`key-hint${analysing?" is-analysing":""}`}><span>🎼</span><div>{analysing?<><strong>Analysing key…</strong><p>Listening for the song’s tonal centre.</p></>:detectedKey?<><strong>Detected key: {detectedKey.label}</strong><p>{detectedKey.confidence}% confidence · A better starting point for transposition.</p></>:<><strong>Automatic key analysis</strong><p>Upload a track and we’ll detect its musical key.</p></>}</div></div>
     </section>
     <footer><span>Ready Transpose</span><span>Built for singers</span></footer>
   </main>
