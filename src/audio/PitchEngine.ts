@@ -37,14 +37,20 @@ export class PitchEngine {
     this.buffer=null
     this.pausedAt=0
 
-    const stream=await navigator.mediaDevices.getDisplayMedia({
+    const audioConstraints: MediaTrackConstraints & Record<string, unknown> = {}
+    const supported=navigator.mediaDevices.getSupportedConstraints() as Record<string, boolean>
+    if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=true
+
+    const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
       video:true,
-      audio:{suppressLocalAudioPlayback:false},
+      audio:audioConstraints,
       selfBrowserSurface:'exclude',
       systemAudio:'exclude',
       surfaceSwitching:'include',
       monitorTypeSurfaces:'exclude'
-    })
+    }
+
+    const stream=await navigator.mediaDevices.getDisplayMedia(captureOptions)
 
     const audioTracks=stream.getAudioTracks()
     if(audioTracks.length===0){
