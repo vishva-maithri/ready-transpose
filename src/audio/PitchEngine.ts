@@ -106,12 +106,21 @@ export class PitchEngine {
     const captureLevel=measureLevel()
     console.log('🎧 Ready Transpose — captured RMS level:',captureLevel)
 
+    // Route captured YouTube audio through SoundTouch so pitch changes
+    // happen in real time while playback speed stays at 1x.
+    const node=new SoundTouchNode({context:this.context!})
     const gain=this.context!.createGain()
-    source.connect(gain)
+
+    source.connect(node)
+    node.connect(gain)
     gain.connect(this.context!.destination)
+
+    node.pitchSemitones.value=semitones
+    node.playbackRate.value=1
 
     this.captureStream=stream
     this.captureSource=source
+    this.node=node
     this.gain=gain
     analyser.disconnect()
     this.capturing=true
