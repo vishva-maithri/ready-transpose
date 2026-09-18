@@ -266,6 +266,42 @@ export default function App(){
     }
   }
 
+  const analyseCapturedTrack=async()=>{
+    const stream=engine.current.getCaptureStream()
+    const audioTrack=stream?.getAudioTracks()[0]
+    if(!audioTrack)return
+
+    setAnalysing(true)
+    setStatus('Listening for the key…')
+
+    try{
+      const analysisStream=new MediaStream([audioTrack])
+      const recorder=new MediaRecorder(analysisStream)
+      const chunks:Blob[]=[]
+      recorder.ondataavailable=event=>{if(event.data.size>0)chunks.push(event.data)}
+
+      const recording=new Promise<Blob>((resolve,reject)=>{
+        recorder.onerror=()=>reject(recorder.error??new Error('Could not analyse captured audio'))
+        recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType||'audio/webm'}))
+      })
+
+      recorder.start()
+      await new Promise(resolve=>window.setTimeout(resolve,8000))
+      if(recorder.state!=='inactive')recorder.stop()
+      const blob=await recording
+      const buffer=await new AudioContext().decodeAudioData(await blob.arrayBuffer())
+      const key=detectKey(buffer)
+      setDetectedKey(key)
+      setStatus('Live — player tab audio connected')
+      void analyseCapturedTrack()
+    }catch(error){
+      console.error('Key analysis failed',error)
+      setStatus('Live — player tab audio connected')
+    }finally{
+      setAnalysing(false)
+    }
+  }
+
   const startCapture=async()=>{
     if(loading||liveCapture)return
 
