@@ -222,7 +222,7 @@ export default function App(){
       await engine.current.captureTabAudio(pitch)
       setLiveCapture(true)
       setTrackName(youtubeVideoId?'YouTube video':'YouTube tab audio')
-      const playerPlaying=(youtubePlayer.current?.getCurrentTime()??0)>0 && !Number.isNaN(youtubePlayer.current?.getCurrentTime()??0)
+      const playerPlaying=youtubePlayer.current?.getState()===1
       setCurrentTime(youtubePlayer.current?.getCurrentTime()??0)
       setDuration(youtubePlayer.current?.getDuration()??0)
       setPlaying(playerPlaying)
@@ -377,7 +377,7 @@ export default function App(){
     if(pitchPulseTimer.current) window.clearTimeout(pitchPulseTimer.current)
     window.requestAnimationFrame(()=>setPitchPulse(true))
     pitchPulseTimer.current=window.setTimeout(()=>setPitchPulse(false),180)
-    if(playing) engine.current.setPitch(value)
+    if(playing||liveCapture) engine.current.setPitch(value)
   }
 
   const nudgePitch=(delta:number)=>changePitch(Math.min(6,Math.max(-6,pitch+delta)))
@@ -460,7 +460,7 @@ export default function App(){
   <span className="party-icon"><PartyPopper size={18}/></span>
   <span className="party-copy"><strong>Party Mode</strong><small>GO FULLSCREEN</small></span>
   <Maximize2 size={17}/>
-</button><button className="secondary-play-button" onClick={restart} disabled={loading||!trackName||liveCapture} aria-label="Restart">{<RotateCcw size={18}/>}</button><button className="play-button" onClick={togglePlayback} disabled={loading} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div></div>
+</button><button className="secondary-play-button" onClick={restart} disabled={loading||!trackName} aria-label="Restart">{<RotateCcw size={18}/>}</button><button className="play-button" onClick={togglePlayback} disabled={loading} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div></div>
       <div className="progress-panel">
         <input className="progress-slider" type="range" min="0" max={duration||0} step="0.1" value={Math.min(currentTime,duration||0)} onPointerDown={beginSeek} onChange={e=>previewSeek(Number(e.target.value))} onPointerUp={e=>finishSeek(Number(e.currentTarget.value))} onKeyDown={e=>{if(e.key==='Enter') finishSeek(Number(e.currentTarget.value))}} disabled={loading||!duration} aria-label="Playback position"/>
         <div className="time-row"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
