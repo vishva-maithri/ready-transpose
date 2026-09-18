@@ -570,7 +570,7 @@ export default function App(){
         <div className={`youtube-connection-step${youtubeReady?' is-ready':''}`}><span className="youtube-step-number">2</span><div><strong>{liveCapture?'Audio connected':'Connect audio'}</strong><span>{liveCapture?'Ready Transpose is receiving the player audio. You can now play and transpose.':'Click Connect Audio, then choose the Ready Transpose YouTube Player tab and enable Share audio.'}</span></div></div>
       </div>}
       {youtubeVideoId&&youtubeReady&&!liveCapture&&<button className="capture-button" disabled={loading} onClick={startCapture}><Radio size={17}/>Connect Audio</button>}
-      {youtubeVideoId&&liveCapture&&<button className="capture-button is-live" disabled={loading} onClick={stopCapture}><Radio size={17}/>Audio Connected — Disconnect</button>
+      {youtubeVideoId&&liveCapture&&<button className="capture-button is-live" disabled={loading} onClick={stopCapture}><Radio size={17}/>Audio Connected — Disconnect</button>}
       <div className="divider"><span>OR</span></div>
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
     </section>
