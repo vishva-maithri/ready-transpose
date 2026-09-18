@@ -406,3 +406,5 @@
     height:1px;
   }
 }
+
+.primary-button{display:inline-flex;align-items:center;justify-content:center;gap:7px}.primary-button svg{display:block;flex:0 0 auto}
