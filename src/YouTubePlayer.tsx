@@ -83,6 +83,7 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
 ){
   const mountRef=useRef<HTMLDivElement|null>(null)
   const playerRef=useRef<YouTubePlayerApi|null>(null)
+  const playerReadyRef=useRef(false)
   const onReadyRef=useRef(onReady)
   const onStateChangeRef=useRef(onStateChange)
   const onErrorRef=useRef(onError)
@@ -92,12 +93,32 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
   useEffect(()=>{ onErrorRef.current=onError },[onError])
 
   useImperativeHandle(ref,()=>({
-    play:()=>playerRef.current?.playVideo(),
-    pause:()=>playerRef.current?.pauseVideo(),
-    seek:(seconds)=>playerRef.current?.seekTo(seconds,true),
-    getCurrentTime:()=>playerRef.current?.getCurrentTime()??0,
-    getDuration:()=>playerRef.current?.getDuration()??0,
-    getState:()=>((playerRef.current as YouTubePlayerApi & {getPlayerState?:()=>number})?.getPlayerState?.()??-1) as YouTubePlayerState
+    play:()=>{
+      const player=playerRef.current as (YouTubePlayerApi & Record<string,unknown>)|null
+      if(playerReadyRef.current&&typeof player?.playVideo==='function') player.playVideo()
+    },
+    pause:()=>{
+      const player=playerRef.current as (YouTubePlayerApi & Record<string,unknown>)|null
+      if(playerReadyRef.current&&typeof player?.pauseVideo==='function') player.pauseVideo()
+    },
+    seek:(seconds)=>{
+      const player=playerRef.current as (YouTubePlayerApi & Record<string,unknown>)|null
+      if(playerReadyRef.current&&typeof player?.seekTo==='function') player.seekTo(seconds,true)
+    },
+    getCurrentTime:()=>{
+      const player=playerRef.current as (YouTubePlayerApi & Record<string,unknown>)|null
+      return playerReadyRef.current&&typeof player?.getCurrentTime==='function' ? player.getCurrentTime() : 0
+    },
+    getDuration:()=>{
+      const player=playerRef.current as (YouTubePlayerApi & Record<string,unknown>)|null
+      return playerReadyRef.current&&typeof player?.getDuration==='function' ? player.getDuration() : 0
+    },
+    getState:()=>{
+      const player=playerRef.current as (YouTubePlayerApi & {getPlayerState?:()=>number})|null
+      return playerReadyRef.current&&typeof player?.getPlayerState==='function'
+        ? player.getPlayerState() as YouTubePlayerState
+        : -1
+    }
   }),[])
 
   useEffect(()=>{
@@ -111,6 +132,7 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
       if(!win.YT?.Player)return
 
       playerRef.current?.destroy()
+      playerReadyRef.current=false
       mountRef.current.innerHTML=''
 
       playerRef.current=new win.YT.Player(mountRef.current,{
@@ -124,6 +146,7 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
         },
         events:{
           onReady:(event)=>{
+            playerReadyRef.current=true
             const title=event.target.getVideoData?.().title??'YouTube video'
             onReadyRef.current?.(title)
           },
@@ -147,6 +170,7 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
 
     return()=>{
       cancelled=true
+      playerReadyRef.current=false
       playerRef.current?.destroy()
       playerRef.current=null
     }
