@@ -54,7 +54,7 @@ export class PitchEngine {
     // Diagnostic: keep the browser's original tab audio audible while we verify that
     // the captured stream is reaching the processed output path. If this restores
     // sound, the next step is to separate/suppress the original path cleanly.
-    if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=false
+    if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=true
 
     const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
       video:true,
@@ -84,15 +84,13 @@ export class PitchEngine {
     }
 
     const source=this.context!.createMediaStreamSource(stream)
-    const node=new SoundTouchNode({context:this.context!})
     const gain=this.context!.createGain()
 
-    source.connect(node)
-    node.connect(gain)
+    // Diagnostic: with local playback suppressed, first route the captured
+    // stream directly to the speakers. This isolates browser capture/routing
+    // from SoundTouch processing before we re-enable pitch shifting.
+    source.connect(gain)
     gain.connect(this.context!.destination)
-
-    node.pitchSemitones.value=semitones
-    node.playbackRate.value=1
 
     this.captureStream=stream
     this.captureSource=source
