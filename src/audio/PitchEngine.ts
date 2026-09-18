@@ -94,7 +94,6 @@ export class PitchEngine {
 
     this.captureStream=stream
     this.captureSource=source
-    this.node=node
     this.gain=gain
     this.capturing=true
     this.playing=true
