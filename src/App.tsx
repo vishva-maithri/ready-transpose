@@ -1,9 +1,17 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
-import { Link2, Music2, Pause, Play, RotateCcw, Upload, Youtube } from 'lucide-react'
+import { ArrowRight, Link2, Lightbulb, Music2, Pause, Play, RotateCcw, Upload, Youtube } from 'lucide-react'
 import { PitchEngine } from './audio/PitchEngine'
 import { detectKey, KeyName } from './audio/KeyDetector'
 
 const SEMITONES=Array.from({length:13},(_,i)=>i-6)
+const PITCH_CLASSES=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B']
+
+const getTransposedKey=(key:KeyName,semitones:number)=>{
+  const tonicIndex=PITCH_CLASSES.indexOf(key.tonic)
+  if(tonicIndex<0) return key.label
+  const nextTonic=PITCH_CLASSES[(tonicIndex+semitones+12)%12]
+  return `${nextTonic} ${key.mode==='major'?'Major':'Minor'}`
+}
 
 const formatTime=(seconds:number)=>{
   if(!Number.isFinite(seconds)||seconds<0) return '0:00'
@@ -157,7 +165,7 @@ export default function App(){
       <div className="pitch-panel"><div className="pitch-heading"><div><span className="label">TRANSPOSE</span><div className="pitch-value">{pitch>0?'+':''}{pitch}<small> semitones</small></div></div><button className="reset" onClick={()=>changePitch(0)} disabled={loading}>Reset</button></div>
       <input className="pitch-slider" type="range" min="-6" max="6" step="1" value={pitch} onChange={e=>changePitch(Number(e.target.value))} disabled={loading} aria-label="Transpose pitch"/>
       <div className="semitone-grid">{SEMITONES.map(step=><button key={step} className={step===pitch?'active':''} onClick={()=>changePitch(step)} disabled={loading}>{step>0?'+':''}{step}</button>)}</div></div>
-      <div className={`key-hint${analysing?" is-analysing":""}`}><span>🎼</span><div>{analysing?<><strong>Analysing key…</strong><p>Listening for the song’s tonal centre.</p></>:detectedKey?<><strong>Detected key: {detectedKey.label}</strong><p>{detectedKey.confidence}% confidence · A better starting point for transposition.</p></>:<><strong>Automatic key analysis</strong><p>Upload a track and we’ll detect its musical key.</p></>}</div></div>
+      <div className={`key-analysis${analysing?" is-analysing":""}`}>{analysing ? <div className="key-analysis-loading"><span className="key-icon">🎼</span><div><strong>Analysing key…</strong><p>Listening for the song’s tonal centre.</p></div></div> : detectedKey ? <><div className="key-column"><span className="key-icon">🎼</span><div><span className="label">DETECTED KEY</span><strong className="key-name">{detectedKey.label}</strong><span className="key-confidence">{detectedKey.confidence}% confidence</span></div></div><div className="key-arrow"><ArrowRight size={24}/></div><div className="key-column current-key"><div><span className="label">WITH CURRENT TRANSPOSE</span><strong className="key-name">{getTransposedKey(detectedKey,pitch)}</strong><span className="key-subtitle">{pitch===0?"Same as the original key":`${pitch>0?"+":""}${pitch} semitones from original`}</span></div></div><div className="key-tip"><Lightbulb size={19}/><div><strong>A better starting point</strong><p>Use the detected key as your reference, then move a few semitones up or down until it feels comfortable.</p></div></div></> : <div className="key-analysis-empty"><span className="key-icon">🎼</span><div><strong>Automatic key analysis</strong><p>Upload a track and we’ll detect its musical key.</p></div></div>}</div>
     </section>
     <footer><span>Ready Transpose</span><span>Built for singers</span></footer>
   </main>
