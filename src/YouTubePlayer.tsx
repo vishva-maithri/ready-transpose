@@ -82,6 +82,13 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
 ){
   const mountRef=useRef<HTMLDivElement|null>(null)
   const playerRef=useRef<YouTubePlayerApi|null>(null)
+  const onReadyRef=useRef(onReady)
+  const onStateChangeRef=useRef(onStateChange)
+  const onErrorRef=useRef(onError)
+
+  useEffect(()=>{ onReadyRef.current=onReady },[onReady])
+  useEffect(()=>{ onStateChangeRef.current=onStateChange },[onStateChange])
+  useEffect(()=>{ onErrorRef.current=onError },[onError])
 
   useImperativeHandle(ref,()=>({
     play:()=>playerRef.current?.playVideo(),
@@ -116,13 +123,13 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
         events:{
           onReady:(event)=>{
             const title=event.target.getVideoData?.().title??'YouTube video'
-            onReady?.(title)
+            onReadyRef.current?.(title)
           },
           onStateChange:(event)=>{
-            onStateChange?.(event.data)
+            onStateChangeRef.current?.(event.data)
           },
           onError:(event)=>{
-            onError?.(
+            onErrorRef.current?.(
               event.data===101||event.data===150
                 ?'This YouTube video does not allow embedded playback.'
                 :'YouTube could not load this video.'
@@ -133,7 +140,7 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
     }
 
     createPlayer().catch(()=>{
-      if(!cancelled) onError?.('Could not load the YouTube player.')
+      if(!cancelled) onErrorRef.current?.('Could not load the YouTube player.')
     })
 
     return()=>{
@@ -141,7 +148,7 @@ const YouTubePlayer=forwardRef<YouTubePlayerHandle,Props>(function YouTubePlayer
       playerRef.current?.destroy()
       playerRef.current=null
     }
-  },[videoId,onError,onReady,onStateChange])
+  },[videoId])
 
   return <div className="youtube-player-wrap"><div ref={mountRef} className="youtube-player"/></div>
 })
