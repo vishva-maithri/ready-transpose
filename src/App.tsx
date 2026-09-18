@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
-import { Link2, Music2, Pause, Play, Upload, Youtube } from 'lucide-react'
+import { Link2, Music2, Pause, Play, RotateCcw, Upload, Youtube } from 'lucide-react'
 import { PitchEngine } from './audio/PitchEngine'
 
 const SEMITONES=Array.from({length:13},(_,i)=>i-6)
@@ -82,6 +82,14 @@ export default function App(){
     }
   }
 
+  const restart=()=>{
+    if(!trackName) return
+    const wasPlaying=playing
+    engine.current.seek(0,pitch)
+    setCurrentTime(0)
+    setStatus(wasPlaying?'Playing':'Ready to play')
+  }
+
   const beginSeek=()=>{
     seeking.current=true
     pendingSeek.current=null
@@ -112,7 +120,7 @@ export default function App(){
       <label className="upload-zone"><Upload size={22}/><strong>Upload an audio file</strong><span>MP3, WAV, M4A — used for the working audio prototype</span><input type="file" accept="audio/*" onChange={loadFile}/></label>
     </section>
     <section className="player-card">
-      <div className="track-row"><div className="track-art"><Music2/></div><div className="track-info"><span className="status">{status}</span><strong>{trackName||'No track loaded'}</strong></div><button className="play-button" onClick={togglePlayback} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div>
+      <div className="track-row"><div className="track-art"><Music2/></div><div className="track-info"><span className="status">{status}</span><strong>{trackName||'No track loaded'}</strong></div><div className="player-actions"><button className="secondary-play-button" onClick={restart} disabled={!trackName} aria-label="Restart">{<RotateCcw size={18}/>}</button><button className="play-button" onClick={togglePlayback} aria-label={playing?'Pause':'Play'}>{playing?<Pause fill="currentColor" size={21}/>:<Play fill="currentColor" size={21}/>}</button></div></div>
       <div className="progress-panel">
         <input className="progress-slider" type="range" min="0" max={duration||0} step="0.1" value={Math.min(currentTime,duration||0)} onPointerDown={beginSeek} onChange={e=>previewSeek(Number(e.target.value))} onPointerUp={e=>finishSeek(Number(e.currentTarget.value))} onKeyDown={e=>{if(e.key==='Enter') finishSeek(Number(e.currentTarget.value))}} disabled={!duration} aria-label="Playback position"/>
         <div className="time-row"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
