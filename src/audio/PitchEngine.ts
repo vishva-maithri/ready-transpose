@@ -120,6 +120,10 @@ export class PitchEngine {
     return this.buffer?.duration??0
   }
 
+  getAudioBuffer() {
+    return this.buffer
+  }
+
   private cleanupSource() {
     try { this.source?.stop() } catch {}
     this.source?.disconnect()
