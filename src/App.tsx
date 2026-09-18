@@ -3,7 +3,6 @@ import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper
 import { PitchEngine } from './audio/PitchEngine'
 import { detectKey, KeyName } from './audio/KeyDetector'
 import { estimateBpm } from './audio/BpmDetector'
-import YouTubePlayer, { YouTubePlayerHandle } from './YouTubePlayer'
 
 const SEMITONES=Array.from({length:13},(_,i)=>i-6)
 const PITCH_CLASSES=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B']
@@ -43,13 +42,75 @@ export default function App(){
   const seeking=useRef(false)
   const pendingSeek=useRef<number|null>(null)
   const engine=useRef(new PitchEngine())
-  const youtubePlayer=useRef<YouTubePlayerHandle|null>(null)
+  const youtubeWindow=useRef<Window|null>(null)
 
 
   useEffect(()=>{
     const handleFullscreenChange=()=>setPartyMode(document.fullscreenElement!==null)
     document.addEventListener('fullscreenchange',handleFullscreenChange)
     return ()=>document.removeEventListener('fullscreenchange',handleFullscreenChange)
+  },[])
+
+  const sendYoutubeCommand=(command:string,value?:number)=>{
+    const target=youtubeWindow.current
+    if(!target||target.closed)return false
+    target.postMessage({type:'READY_TRANSPOSE_COMMAND',command,value},window.location.origin)
+    return true
+  }
+
+  useEffect(()=>{
+    const handleYoutubeMessage=(event:MessageEvent)=>{
+      if(event.origin!==window.location.origin||event.source!==youtubeWindow.current)return
+      const message=event.data as {type?:string,title?:string,state?:number,currentTime?:number,duration?:number,message?:string}
+      if(message.type==='YT_PLAYER_READY'){
+        setYoutubeReady(true)
+        setTrackName(message.title||'YouTube video')
+        setDuration(message.duration??0)
+        setStatus('YouTube player ready — capture its window audio')
+        return
+      }
+      if(message.type==='YT_TIME'){
+        setCurrentTime(message.currentTime??0)
+        if((message.duration??0)>0)setDuration(message.duration??0)
+        return
+      }
+      if(message.type==='YT_STATE'){
+        const state=message.state??-1
+        if(state===1){
+          setPlaying(true)
+          setStatus(liveCapture?'Playing — live pitch shift':'Playing')
+        }else if(state===2){
+          setPlaying(false)
+          setStatus(liveCapture?'Paused — capture stays connected':'Paused')
+        }else if(state===0){
+          setPlaying(false)
+          setCurrentTime(message.duration??duration)
+          setStatus('Finished')
+        }
+        return
+      }
+      if(message.type==='YT_ERROR'){
+        setYoutubeReady(false)
+        setPlaying(false)
+        setStatus(message.message||'YouTube could not load this video.')
+        return
+      }
+      if(message.type==='YT_POPUP_CLOSED'){
+        setYoutubeReady(false)
+        if(liveCapture){
+          engine.current.stop()
+          setLiveCapture(false)
+        }
+        setPlaying(false)
+        setStatus('YouTube player window closed')
+      }
+    }
+    window.addEventListener('message',handleYoutubeMessage)
+    return ()=>window.removeEventListener('message',handleYoutubeMessage)
+  },[liveCapture,duration])
+
+  useEffect(()=>()=>{
+    if(youtubeWindow.current&&!youtubeWindow.current.closed)youtubeWindow.current.close()
   },[])
 
   const togglePartyMode=async()=>{
@@ -80,9 +141,9 @@ export default function App(){
       if(event.key==='ArrowLeft'){
         event.preventDefault()
         if(trackName) {
-          const current=youtubeVideoId?youtubePlayer.current?.getCurrentTime()??0:engine.current.getCurrentTime()
+          const current=youtubeVideoId?currentTime:engine.current.getCurrentTime()
           const target=Math.max(0,current-5)
-          if(youtubeVideoId) youtubePlayer.current?.seek(target)
+          if(youtubeVideoId) sendYoutubeCommand('SEEK',target)
           else engine.current.seek(target,pitch)
           setCurrentTime(target)
         }
@@ -92,10 +153,10 @@ export default function App(){
       if(event.key==='ArrowRight'){
         event.preventDefault()
         if(trackName) {
-          const current=youtubeVideoId?youtubePlayer.current?.getCurrentTime()??0:engine.current.getCurrentTime()
-          const durationValue=youtubeVideoId?youtubePlayer.current?.getDuration()??0:engine.current.getDuration()
+          const current=youtubeVideoId?currentTime:engine.current.getCurrentTime()
+          const durationValue=youtubeVideoId?duration:engine.current.getDuration()
           const target=Math.min(durationValue,current+5)
-          if(youtubeVideoId) youtubePlayer.current?.seek(target)
+          if(youtubeVideoId) sendYoutubeCommand('SEEK',target)
           else engine.current.seek(target,pitch)
           setCurrentTime(target)
         }
@@ -125,48 +186,36 @@ export default function App(){
   },[pitch,playing,loading,trackName,youtubeVideoId])
 
   useEffect(()=>{
-    if(!playing&&!youtubeVideoId) return
+    if(!playing||youtubeVideoId)return
     const timer=window.setInterval(()=>{
-      if(seeking.current) return
-
-      if(youtubeVideoId){
-        const audioCaptureAlive=!liveCapture||engine.current.isCapturing()
-        if(liveCapture&&!audioCaptureAlive){
-          youtubePlayer.current?.pause()
-          setLiveCapture(false)
-          setPlaying(false)
-          setStatus('Capture ended — YouTube paused')
-          return
-        }
-
-        const audioTime=youtubePlayer.current?.getCurrentTime()??0
-        const audioDuration=youtubePlayer.current?.getDuration()??0
-        setCurrentTime(audioTime)
-        setDuration(audioDuration)
-
-        if(audioDuration>0&&audioTime>=audioDuration-0.25){
-          setPlaying(false)
-        }
-        return
-      }
-
+      if(seeking.current)return
       const audioPlaying=engine.current.isPlaying()
       const audioTime=engine.current.getCurrentTime()
       const audioDuration=engine.current.getDuration()
-
       setDuration(audioDuration)
-
       if(!audioPlaying){
         setCurrentTime(audioDuration)
         setPlaying(false)
         setStatus('Finished')
         return
       }
-
       setCurrentTime(audioTime)
     },100)
     return ()=>window.clearInterval(timer)
-  },[playing,youtubeVideoId,liveCapture])
+  },[playing,youtubeVideoId])
+
+  useEffect(()=>{
+    if(!liveCapture||!youtubeVideoId)return
+    const timer=window.setInterval(()=>{
+      if(!engine.current.isCapturing()){
+        sendYoutubeCommand('PAUSE')
+        setLiveCapture(false)
+        setPlaying(false)
+        setStatus('Capture ended — YouTube paused')
+      }
+    },250)
+    return ()=>window.clearInterval(timer)
+  },[liveCapture,youtubeVideoId])
 
   const loadYoutube=()=>{
     const value=url.trim()
@@ -194,6 +243,14 @@ export default function App(){
       }
 
       engine.current.stop()
+      if(youtubeWindow.current&&!youtubeWindow.current.closed)youtubeWindow.current.close()
+      const popupUrl=window.location.origin+'/youtube-player?videoId='+encodeURIComponent(videoId)
+      const popup=window.open(popupUrl,'ready-transpose-youtube-player','popup=yes,width=960,height=700,resizable=yes,scrollbars=no')
+      if(!popup){
+        setStatus('Chrome blocked the player window — allow pop-ups for Ready Transpose and try again.')
+        return
+      }
+      youtubeWindow.current=popup
       setYoutubeVideoId(videoId)
       setYoutubeReady(false)
       setLiveCapture(false)
@@ -202,8 +259,8 @@ export default function App(){
       setDuration(0)
       setDetectedKey(null)
       setBpm(0)
-      setTrackName('YouTube video')
-      setStatus('Loading YouTube player…')
+      setTrackName('Loading YouTube video…')
+      setStatus('Player window opened — waiting for YouTube…')
     }catch{
       setStatus('Please enter a valid YouTube URL')
     }
@@ -213,7 +270,7 @@ export default function App(){
     if(loading||liveCapture)return
 
     setLoading(true)
-    setStatus('Choose your YouTube tab and share its audio…')
+    setStatus('Select the Ready Transpose player window and enable Share audio…')
     setDetectedKey(null)
     setBpm(0)
     setAnalysing(false)
@@ -221,12 +278,8 @@ export default function App(){
     try{
       await engine.current.captureTabAudio(pitch)
       setLiveCapture(true)
-      setTrackName(youtubeVideoId?'YouTube video':'YouTube tab audio')
-      const playerPlaying=youtubePlayer.current?.getState()===1
-      setCurrentTime(youtubePlayer.current?.getCurrentTime()??0)
-      setDuration(youtubePlayer.current?.getDuration()??0)
-      setPlaying(playerPlaying)
-      setStatus('Live — YouTube audio connected')
+      setTrackName(youtubeVideoId?(trackName||'YouTube video'):'YouTube tab audio')
+      setStatus('Live — player window audio connected')
     }catch(error){
       console.error(error)
       setStatus(error instanceof Error?error.message:'Could not capture browser audio')
@@ -240,7 +293,7 @@ export default function App(){
   const stopCapture=()=>{
     if(!liveCapture)return
     engine.current.stop()
-    youtubePlayer.current?.pause()
+    sendYoutubeCommand('PAUSE')
     setLiveCapture(false)
     setPlaying(false)
     setStatus('Capture stopped')
@@ -252,6 +305,8 @@ export default function App(){
 
     setLoading(true)
     engine.current.stop()
+    if(youtubeWindow.current&&!youtubeWindow.current.closed)youtubeWindow.current.close()
+    youtubeWindow.current=null
     setYoutubeVideoId(null)
     setYoutubeReady(false)
     setLiveCapture(false)
@@ -301,11 +356,11 @@ export default function App(){
       }
 
       if(playing){
-        youtubePlayer.current?.pause()
+        sendYoutubeCommand('PAUSE')
         setPlaying(false)
         setStatus(liveCapture?'Paused — capture stays connected':'Paused')
       }else{
-        youtubePlayer.current?.play()
+        sendYoutubeCommand('PLAY')
         setPlaying(true)
         setStatus(liveCapture?'Playing — live pitch shift':'Playing')
       }
@@ -335,7 +390,7 @@ export default function App(){
     if(!trackName) return
     const wasPlaying=playing
     if(youtubeVideoId){
-      youtubePlayer.current?.seek(0)
+      sendYoutubeCommand('SEEK',0)
     }else{
       engine.current.seek(0,pitch)
     }
@@ -362,7 +417,7 @@ export default function App(){
     seeking.current=false
 
     if(youtubeVideoId){
-      youtubePlayer.current?.seek(target)
+      sendYoutubeCommand('SEEK',target)
       setCurrentTime(target)
     }else{
       engine.current.seek(target,pitch)
@@ -382,27 +437,6 @@ export default function App(){
 
   const nudgePitch=(delta:number)=>changePitch(Math.min(6,Math.max(-6,pitch+delta)))
 
-  const handleYoutubeReady=(title:string)=>{
-    setYoutubeReady(true)
-    setTrackName(title||'YouTube video')
-    setDuration(youtubePlayer.current?.getDuration()??0)
-    setStatus('YouTube ready — press Capture, then Play')
-  }
-
-  const handleYoutubeStateChange=(state:number)=>{
-    if(state===1){
-      setPlaying(true)
-      setStatus(liveCapture?'Playing — live pitch shift':'Playing')
-    }else if(state===2){
-      setPlaying(false)
-      setStatus(liveCapture?'Paused — capture stays connected':'Paused')
-    }else if(state===0){
-      setPlaying(false)
-      setCurrentTime(youtubePlayer.current?.getDuration()??0)
-      setStatus('Finished')
-    }
-  }
-
   const handleYoutubeError=(message:string)=>{
     setYoutubeReady(false)
     setPlaying(false)
@@ -417,7 +451,6 @@ export default function App(){
     </div>
     <div className="party-content">
       <span className="party-eyebrow">KARAOKE • PARTY MODE</span>
-      {youtubeVideoId&&<div className="party-youtube-player"><YouTubePlayer ref={youtubePlayer} videoId={youtubeVideoId} onReady={handleYoutubeReady} onStateChange={handleYoutubeStateChange} onError={handleYoutubeError}/></div>}
       <div className="party-art"><Music2 size={54}/></div>
       <h1>{trackName||'No track loaded'}</h1>
       <div className="party-status"><span className={"status-dot"+(playing?" party-playing":"")}/>{status}</div>
@@ -449,9 +482,9 @@ export default function App(){
     <section className="input-card">
       <div className="input-heading"><div><p className="label">YOUTUBE TRACK</p><h2>Bring your song</h2></div><Youtube size={28}/></div>
       <div className="url-row"><Link2 size={18}/><input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://youtube.com/watch?v=…" aria-label="YouTube URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={loadYoutube}><Youtube size={16}/>Load in Ready Transpose</button></div>
-      {youtubeVideoId&&<div className="youtube-embed-card"><YouTubePlayer ref={youtubePlayer} videoId={youtubeVideoId} onReady={handleYoutubeReady} onStateChange={handleYoutubeStateChange} onError={handleYoutubeError}/></div>}
-      <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'When ready, click Capture and select “This Tab” with Share audio. Ready Transpose will control play, pause and seek.':'Load a YouTube video here, then capture this tab’s audio for real-time pitch shifting.'}</span></div>
-      <button className={`capture-button${liveCapture?" is-live":""}`} disabled={loading&&!liveCapture||!youtubeVideoId||!youtubeReady} onClick={liveCapture?stopCapture:startCapture}>{liveCapture?<><Square size={15} fill="currentColor"/>Stop capture</>:<><Radio size={16}/>Capture this tab audio</>}</button>
+      {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player window is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate window so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
+      <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'Click Capture, then select the separate “Ready Transpose — YouTube Player” window and enable Share audio.':'Load a YouTube video to open the separate player window.'}</span></div>
+      <button className={`capture-button${liveCapture?" is-live":""}`} disabled={loading&&!liveCapture||!youtubeVideoId||!youtubeReady} onClick={liveCapture?stopCapture:startCapture}>{liveCapture?<><Square size={15} fill="currentColor"/>Stop capture</>:<><Radio size={16}/>Capture player window audio</>}</button>
       <div className="divider"><span>OR</span></div>
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
     </section>
