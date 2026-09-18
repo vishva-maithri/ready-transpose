@@ -50,13 +50,35 @@ export default function App(){
 
       if(event.key==='ArrowLeft'){
         event.preventDefault()
-        changePitch(Math.max(-6,pitch-1))
+        if(trackName) {
+          const target=Math.max(0,engine.current.getCurrentTime()-5)
+          engine.current.seek(target,pitch)
+          setCurrentTime(engine.current.getCurrentTime())
+          setStatus(playing?'Playing':'Ready to play')
+        }
         return
       }
 
       if(event.key==='ArrowRight'){
         event.preventDefault()
+        if(trackName) {
+          const target=Math.min(engine.current.getDuration(),engine.current.getCurrentTime()+5)
+          engine.current.seek(target,pitch)
+          setCurrentTime(engine.current.getCurrentTime())
+          setStatus(playing?'Playing':'Ready to play')
+        }
+        return
+      }
+
+      if(event.key==='ArrowUp'){
+        event.preventDefault()
         changePitch(Math.min(6,pitch+1))
+        return
+      }
+
+      if(event.key==='ArrowDown'){
+        event.preventDefault()
+        changePitch(Math.max(-6,pitch-1))
         return
       }
 
