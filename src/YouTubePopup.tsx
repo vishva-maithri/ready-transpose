@@ -78,6 +78,6 @@ export default function YouTubePopup(){
         onError={handleError}
       />
     </div>
-    <p className="youtube-popup-hint">Keep this window open while Ready Transpose captures its audio.</p>
+    <p className="youtube-popup-hint">Keep this tab open while Ready Transpose captures its audio.</p>
   </main>
 }
