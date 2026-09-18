@@ -51,6 +51,11 @@ export class PitchEngine {
     if(supported.echoCancellation) audioConstraints.echoCancellation=false
     if(supported.noiseSuppression) audioConstraints.noiseSuppression=false
 
+    // Critical for same-tab capture: ask Chrome to stop the original tab
+    // audio from also reaching the speakers. The captured stream should then
+    // be the only audible copy that we route through Ready Transpose.
+    if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=true
+
     const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
       video:true,
       audio:audioConstraints,
@@ -72,6 +77,7 @@ export class PitchEngine {
     console.log('🎧 Ready Transpose — capture settings:', {
       trackSettings:audioTrack?.getSettings(),
       trackConstraints:audioTrack?.getConstraints(),
+      videoTrackSettings:stream.getVideoTracks()[0]?.getSettings(),
       audioContextSampleRate:this.context!.sampleRate,
       audioContextState:this.context!.state
     })
@@ -82,17 +88,32 @@ export class PitchEngine {
     }
 
     const source=this.context!.createMediaStreamSource(stream)
-    const gain=this.context!.createGain()
+    const analyser=this.context!.createAnalyser()
+    analyser.fftSize=2048
+    source.connect(analyser)
 
-    // Diagnostic: with local playback suppressed, first route the captured
-    // stream directly to the speakers. This isolates browser capture/routing
-    // from SoundTouch processing before we re-enable pitch shifting.
+    // Measure whether the captured stream actually contains an audio signal.
+    // This separates "Chrome captured silence" from "Chrome captured audio but
+    // local playback is still being suppressed".
+    const levelData=new Float32Array(analyser.fftSize)
+    const measureLevel=()=>{
+      analyser.getFloatTimeDomainData(levelData)
+      let sum=0
+      for(const sample of levelData) sum+=sample*sample
+      return Math.sqrt(sum/levelData.length)
+    }
+    await new Promise(resolve=>setTimeout(resolve,250))
+    const captureLevel=measureLevel()
+    console.log('🎧 Ready Transpose — captured RMS level:',captureLevel)
+
+    const gain=this.context!.createGain()
     source.connect(gain)
     gain.connect(this.context!.destination)
 
     this.captureStream=stream
     this.captureSource=source
     this.gain=gain
+    analyser.disconnect()
     this.capturing=true
     this.playing=true
 
