@@ -175,3 +175,20 @@
   .party-copy small{display:none}
   .party-mode-button>svg{width:13px;height:13px}
 }
+
+.pitch-value{transform-origin:center left;transition:color .14s ease}
+.pitch-value.is-changing{animation:pitchBump .18s ease-out}
+@keyframes pitchBump{0%{transform:scale(1)}45%{transform:scale(1.09);color:#c2b5ff}100%{transform:scale(1)}}
+.pitch-slider{transition:filter .16s ease}
+.pitch-slider:active{filter:brightness(1.18)}
+.semitone-grid button{transition:transform .12s ease,background .14s ease,border-color .14s ease,color .14s ease}
+.semitone-grid button:active:not(:disabled){transform:scale(.94)}
+.play-button{transition:transform .12s ease,box-shadow .18s ease}
+.play-button:hover:not(:disabled){box-shadow:0 8px 28px rgba(124,92,255,.28)}
+.play-button:active:not(:disabled){transform:scale(.94)}
+.secondary-play-button,.pitch-nudge,.reset{transition:transform .12s ease,background .14s ease,border-color .14s ease}
+.secondary-play-button:active:not(:disabled),.pitch-nudge:active:not(:disabled){transform:scale(.92)}
+@media(prefers-reduced-motion:reduce){
+  .pitch-value.is-changing,.party-sparkle-one,.party-sparkle-two,.status-playing .status-dot,.status-loading .status-dot,.tempo-value.is-playing{animation:none}
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important}
+}
