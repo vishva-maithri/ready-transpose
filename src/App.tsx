@@ -417,6 +417,7 @@ export default function App(){
     </div>
     <div className="party-content">
       <span className="party-eyebrow">KARAOKE • PARTY MODE</span>
+      {youtubeVideoId&&<div className="party-youtube-player"><YouTubePlayer ref={youtubePlayer} videoId={youtubeVideoId} onReady={handleYoutubeReady} onStateChange={handleYoutubeStateChange} onError={handleYoutubeError}/></div>}
       <div className="party-art"><Music2 size={54}/></div>
       <h1>{trackName||'No track loaded'}</h1>
       <div className="party-status"><span className={"status-dot"+(playing?" party-playing":"")}/>{status}</div>
