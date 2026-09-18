@@ -12,11 +12,15 @@ export class PitchEngine {
   private playing=false
 
   async load(file: File) {
-    this.stop()
     this.context ??= new AudioContext()
     if (this.context.state==='suspended') await this.context.resume()
     await SoundTouchNode.register(this.context, processorUrl)
-    this.buffer=await this.context.decodeAudioData(await file.arrayBuffer())
+
+    // Decode first so a bad file does not destroy the currently loaded track.
+    const nextBuffer=await this.context.decodeAudioData(await file.arrayBuffer())
+
+    this.stop()
+    this.buffer=nextBuffer
     this.pausedAt=0
   }
 
