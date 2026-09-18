@@ -281,7 +281,7 @@ export default function App(){
       recorder.ondataavailable=event=>{if(event.data.size>0)chunks.push(event.data)}
 
       const recording=new Promise<Blob>((resolve,reject)=>{
-        recorder.onerror=()=>reject(recorder.error??new Error('Could not analyse captured audio'))
+        recorder.onerror=()=>reject(new Error('Could not analyse captured audio'))
         recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType||'audio/webm'}))
       })
 
