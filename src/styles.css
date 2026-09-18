@@ -31,9 +31,6 @@
 .party-mode-button{display:grid;place-items:center;width:36px;height:36px;border:1px solid #303542;border-radius:50%;color:#a1a6b2;background:#141720}
 .party-mode-button:disabled{opacity:.35;cursor:not-allowed}
 
-.pitch-actions{display:flex;align-items:center;gap:7px}
-.pitch-nudge{display:grid;place-items:center;width:34px;height:34px;border:1px solid #303542;border-radius:9px;color:#d9dbe2;background:#141720;font-size:20px;line-height:1}
-.pitch-nudge:disabled{opacity:.3;cursor:not-allowed}
 .pitch-quick-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}
 .pitch-quick-grid button{min-height:48px;border:1px solid #303542;border-radius:10px;color:#aeb3bf;background:#151821;font-size:14px;font-weight:750;transition:transform .12s ease,background .12s ease,border-color .12s ease}
 .pitch-quick-grid button:hover:not(:disabled){transform:translateY(-1px);border-color:#4b5060}
