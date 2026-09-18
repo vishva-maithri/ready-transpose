@@ -62,7 +62,7 @@ After Step 1 is validated:
 - Restart from the current position
 - Smooth pitch transitions
 - End-of-track handling
-- Loading/error states
+- Loading/error states — **complete**
 
 ## Step 3 — Audio analysis
 
