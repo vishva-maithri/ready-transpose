@@ -72,6 +72,7 @@ Then add:
 - Musical key estimation
 - Confidence score
 - Display of detected key
+- Display of the current key after transposition
 
 ## Step 4 — Singer assistance
 
