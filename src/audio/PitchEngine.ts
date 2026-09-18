@@ -51,11 +51,6 @@ export class PitchEngine {
     if(supported.echoCancellation) audioConstraints.echoCancellation=false
     if(supported.noiseSuppression) audioConstraints.noiseSuppression=false
 
-    // Diagnostic: keep the browser's original tab audio audible while we verify that
-    // the captured stream is reaching the processed output path. If this restores
-    // sound, the next step is to separate/suppress the original path cleanly.
-    if(supported.suppressLocalAudioPlayback) audioConstraints.suppressLocalAudioPlayback=true
-
     const captureOptions: DisplayMediaStreamOptions & Record<string, unknown> = {
       video:true,
       audio:audioConstraints,
@@ -66,11 +61,14 @@ export class PitchEngine {
       monitorTypeSurfaces:'exclude'
     }
 
+    console.log('🎧 Ready Transpose — requesting browser capture…')
     const stream=await navigator.mediaDevices.getDisplayMedia(captureOptions)
+    console.log('🎧 Ready Transpose — browser capture granted')
 
     const audioTracks=stream.getAudioTracks()
     const audioTrack=audioTracks[0]
 
+    console.log('🎧 Ready Transpose — audio track:', audioTrack ? 'found' : 'missing')
     console.log('🎧 Ready Transpose — capture settings:', {
       trackSettings:audioTrack?.getSettings(),
       trackConstraints:audioTrack?.getConstraints(),
