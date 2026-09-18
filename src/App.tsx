@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
-import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper, Pause, Play, Radio, RotateCcw, Square, Upload, Youtube } from 'lucide-react'
+import { ArrowRight, Link2, Lightbulb, Maximize2, Minimize2, Music2, PartyPopper, Pause, Play, Radio, RotateCcw, Upload, Youtube } from 'lucide-react'
 import { PitchEngine } from './audio/PitchEngine'
 import { detectKey, KeyName } from './audio/KeyDetector'
 import { estimateBpm } from './audio/BpmDetector'
@@ -269,15 +269,16 @@ export default function App(){
   },[liveCapture,youtubeVideoId])
 
   const selectYoutubeSuggestion=(suggestion:YoutubeSuggestion)=>{
-    setUrl('https://www.youtube.com/watch?v='+suggestion.videoId)
+    const value='https://www.youtube.com/watch?v='+suggestion.videoId
+    setUrl(value)
     setYoutubeSuggestions([])
     setYoutubeSearchError('')
     setYoutubeActiveSuggestion(-1)
-    window.setTimeout(()=>loadYoutube(),0)
+    loadYoutube(value,true)
   }
 
-  const loadYoutube=()=>{
-    const value=url.trim()
+  const loadYoutube=(inputValue=url,autoCapture=false)=>{
+    const value=inputValue.trim()
     if(!value){
       setStatus('Paste a YouTube URL first')
       return
@@ -319,7 +320,10 @@ export default function App(){
       setDetectedKey(null)
       setBpm(0)
       setTrackName('Loading YouTube video…')
-      setStatus('Player window opened — waiting for YouTube…')
+      setStatus(autoCapture?'Choose the player tab and enable Share audio…':'Player window opened — waiting for YouTube…')
+      if(autoCapture){
+        window.setTimeout(()=>startCapture(),0)
+      }
     }catch{
       setStatus('Please enter a valid YouTube URL')
     }
@@ -329,7 +333,7 @@ export default function App(){
     if(loading||liveCapture)return
 
     setLoading(true)
-    setStatus('Select the Ready Transpose YouTube Player tab and enable Share audio…')
+    setStatus('Choose the Ready Transpose YouTube Player tab and enable Share audio…')
     setDetectedKey(null)
     setBpm(0)
     setAnalysing(false)
@@ -560,8 +564,7 @@ export default function App(){
         </div>}
       </div>
       {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player tab is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate tab so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
-      <div className="capture-hint"><Radio size={15}/><span>{youtubeVideoId?'Click Capture, then select the separate “Ready Transpose — YouTube Player” tab and enable Share audio.':'Search for a song above and choose a YouTube result, or paste a YouTube link directly.'}</span></div>
-      <button className={`capture-button${liveCapture?" is-live":""}`} disabled={loading&&!liveCapture||!youtubeVideoId||!youtubeReady} onClick={liveCapture?stopCapture:startCapture}>{liveCapture?<><Square size={15} fill="currentColor"/>Stop capture</>:<><Radio size={16}/>Capture player tab audio</>}</button>
+      {youtubeVideoId&&<div className={`capture-hint${liveCapture?' is-live':''}`}><Radio size={15}/><span>{liveCapture?'Live capture connected — play the song and transpose it in real time.':'Selecting a YouTube result or loading a YouTube link will open the player and start the browser audio capture. Choose the player tab and enable Share audio when Chrome asks.'}</span></div>}
       <div className="divider"><span>OR</span></div>
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
     </section>
