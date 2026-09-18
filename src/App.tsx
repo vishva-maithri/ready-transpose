@@ -117,7 +117,7 @@ export default function App(){
         setYoutubeReady(true)
         setTrackName(message.title||'YouTube video')
         setDuration(message.duration??0)
-        setStatus('YouTube player ready — capture its window audio')
+        setStatus('YouTube player ready — connect its audio below')
         return
       }
       if(message.type==='YT_TIME'){
@@ -274,10 +274,10 @@ export default function App(){
     setYoutubeSuggestions([])
     setYoutubeSearchError('')
     setYoutubeActiveSuggestion(-1)
-    loadYoutube(value,true)
+    loadYoutube(value)
   }
 
-  const loadYoutube=(inputValue=url,autoCapture=false)=>{
+  const loadYoutube=(inputValue=url)=>{
     const value=inputValue.trim()
     if(!value){
       setStatus('Paste a YouTube URL first')
@@ -320,10 +320,7 @@ export default function App(){
       setDetectedKey(null)
       setBpm(0)
       setTrackName('Loading YouTube video…')
-      setStatus(autoCapture?'Choose the player tab and enable Share audio…':'Player window opened — waiting for YouTube…')
-      if(autoCapture){
-        startCapture()
-      }
+      setStatus('Player window opened — waiting for YouTube…')
     }catch{
       setStatus('Please enter a valid YouTube URL')
     }
@@ -550,7 +547,7 @@ export default function App(){
           if(e.key==='ArrowUp'&&youtubeSuggestions.length){e.preventDefault();setYoutubeActiveSuggestion(index=>Math.max(index-1,-1))}
           if(e.key==='Enter'){
             if(youtubeActiveSuggestion>=0&&youtubeSuggestions[youtubeActiveSuggestion]){e.preventDefault();selectYoutubeSuggestion(youtubeSuggestions[youtubeActiveSuggestion])}
-            else if(isYoutubeUrl(url.trim()))loadYoutube(url,true)
+            else if(isYoutubeUrl(url.trim()))loadYoutube(url)
           }
           if(e.key==='Escape'){setYoutubeSuggestions([]);setYoutubeActiveSuggestion(-1)}
         }} onFocus={()=>{if(url.trim().length>=2&&!isYoutubeUrl(url.trim())&&!youtubeSearchError)setYoutubeSearchError('')}} placeholder="Search YouTube or paste a link…" aria-label="YouTube search or URL" disabled={loading}/><button className="primary-button" disabled={loading} onClick={()=>loadYoutube(url,true)}><Youtube size={16}/>Start</button></div>
@@ -564,7 +561,9 @@ export default function App(){
         </div>}
       </div>
       {youtubeVideoId&&<div className="youtube-popup-card"><Radio size={18}/><div><strong>{youtubeReady?'YouTube player tab is ready':'Opening YouTube player window…'}</strong><span>Playback runs in a separate tab so Ready Transpose can capture and process its audio cleanly.</span></div></div>}
-      {youtubeVideoId&&<div className={`capture-hint${liveCapture?' is-live':''}`}><Radio size={15}/><span>{liveCapture?'Live capture connected — play the song and transpose it in real time.':'Selecting a YouTube result or loading a YouTube link will open the player and start the browser audio capture. Choose the player tab and enable Share audio when Chrome asks.'}</span></div>}
+      {youtubeVideoId&&<div className={`capture-hint${liveCapture?' is-live':''}`}><Radio size={15}/><span>{liveCapture?'Live capture connected — play the song and transpose it in real time.':'The player runs in a separate tab. When it is ready, connect its audio below.'}</span></div>}
+      {youtubeVideoId&&youtubeReady&&!liveCapture&&<button className="capture-button" disabled={loading} onClick={startCapture}><Radio size={17}/>Connect Audio</button>}
+      {youtubeVideoId&&liveCapture&&<button className="capture-button is-live" disabled={loading} onClick={stopCapture}><Radio size={17}/>Audio Connected — Disconnect</button>}
       <div className="divider"><span>OR</span></div>
       <label className={`upload-zone${loading?" is-loading":""}`}><Upload size={22}/><strong>{loading?"Loading audio…":"Upload an audio file"}</strong><span>{loading?"Please wait while the track is decoded":"MP3, WAV, M4A — used for the working audio prototype"}</span><input type="file" accept="audio/*" onChange={loadFile} disabled={loading}/></label>
     </section>
